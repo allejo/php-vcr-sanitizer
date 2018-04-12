@@ -1,0 +1,35 @@
+{
+    "name": "allejo/php-vcr-sanitizer",
+    "description": "A set of php-vcr utilities to sanitize API requests",
+    "type": "library",
+    "require": {
+        "php-vcr/php-vcr": "^1.4",
+        "symfony/event-dispatcher": "^2.4|^3.0|^4.0"
+    },
+    "require-dev": {
+        "mikey179/vfsStream": "^1.6",
+        "php-curl-class/php-curl-class": "^8.0",
+        "phpunit/phpunit": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "allejo\\VCR\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "allejo\\VCR\\Tests\\": "tests/VCR/"
+        }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vladimir Jimenez",
+            "email": "allejo@me.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    }
+}
