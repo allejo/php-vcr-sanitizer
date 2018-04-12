@@ -22,7 +22,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         vfsStream::create(array(
             'fixtures' => array(
-                'cassette.yml' => ''
+                'cassette.yml' => '',
             ),
         ), $root);
 
@@ -90,7 +90,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($newFile);
 
         VCRCleaner::enable(array(
-            'ignoreHeaders' => ['X-Api-Key'],
+            'ignoreHeaders' => array('X-Api-Key'),
         ));
 
         $curl = new Curl();
@@ -114,8 +114,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($newFile);
 
         VCRCleaner::enable(array(
-            'ignoreUrlParameters' => ['apiKey'],
-            'ignoreHeaders' => ['X-Api-Key'],
+            'ignoreUrlParameters' => array('apiKey'),
+            'ignoreHeaders' => array('X-Api-Key'),
         ));
 
         $curl = new Curl();

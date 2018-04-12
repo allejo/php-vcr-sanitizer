@@ -7,10 +7,9 @@
         "symfony/event-dispatcher": "^2.4|^3.0|^4.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.11",
         "mikey179/vfsStream": "^1.6",
         "php-curl-class/php-curl-class": "^8.0",
-        "phpunit/phpunit": "^5.0"
+        "phpunit/phpunit": "^4.8|^5.0"
     },
     "autoload": {
         "psr-4": {
@@ -35,6 +34,7 @@
     },
     "scripts": {
         "test": "phpunit",
+        "test-coverage": "phpunit --coverage-clover coverage.clover",
         "fix": "vendor/bin/php-cs-fixer fix"
     }
 }
