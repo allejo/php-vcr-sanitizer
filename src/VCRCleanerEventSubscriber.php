@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * (c) Copyright 2018 Vladimir Jimenez
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace allejo\VCR;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -16,7 +23,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
     {
         return array(
             // This event is dispatched right before the response is recorded in our storage
-            VCREvents::VCR_BEFORE_RECORD => 'onBeforeRecord'
+            VCREvents::VCR_BEFORE_RECORD => 'onBeforeRecord',
         );
     }
 
@@ -31,7 +38,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
         $url = parse_url($request->getUrl());
 
-        $queryParts = [];
+        $queryParts = array();
         parse_str($url['query'], $queryParts);
 
         foreach ($options['ignoreUrlParameters'] as $urlParameter) {
@@ -50,8 +57,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
      *
      * @param array $parts The same structure as parse_url()
      *
-     * @link https://stackoverflow.com/a/35207936
-     *
+     * @see https://stackoverflow.com/a/35207936
      * @see parse_url()
      *
      * @return string

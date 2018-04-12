@@ -1,12 +1,19 @@
 <?php
 
+/*
+ * (c) Copyright 2018 Vladimir Jimenez
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace allejo\VCR;
 
 use VCR\Request;
 
 class RelaxedRequestMatcher
 {
-    private static $options = [];
+    private static $options = array();
 
     public static function configureOptions(array $options)
     {
@@ -32,8 +39,8 @@ class RelaxedRequestMatcher
             return false;
         }
 
-        $firstQuery = [];
-        $secondQuery = [];
+        $firstQuery = array();
+        $secondQuery = array();
 
         parse_str($firstUrl['query'], $firstQuery);
         parse_str($secondUrl['query'], $secondQuery);

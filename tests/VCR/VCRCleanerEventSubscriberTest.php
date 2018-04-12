@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * (c) Copyright 2018 Vladimir Jimenez
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
 namespace allejo\VCR\Tests;
 
 use allejo\VCR\VCRCleaner;
@@ -15,9 +22,9 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
     {
         $this->root = vfsStream::setup('root');
 
-        vfsStream::create([
-            'fixtures' => [],
-        ], $this->root);
+        vfsStream::create(array(
+            'fixtures' => array(),
+        ), $this->root);
 
         $vURL = vfsStream::url('root/fixtures/');
 
