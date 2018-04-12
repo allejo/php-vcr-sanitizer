@@ -38,7 +38,9 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $options = RelaxedRequestMatcher::getConfigurationOptions();
 
         foreach ($options['ignoreHeaders'] as $header) {
-            $request->setHeader($header, null);
+            if ($request->hasHeader($header)) {
+                $request->setHeader($header, null);
+            }
         }
     }
 
@@ -47,6 +49,10 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $options = RelaxedRequestMatcher::getConfigurationOptions();
 
         $url = parse_url($request->getUrl());
+
+        if (!isset($url['query'])) {
+            return;
+        }
 
         $queryParts = array();
         parse_str($url['query'], $queryParts);

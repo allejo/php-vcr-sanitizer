@@ -42,6 +42,14 @@ class RelaxedRequestMatcher
         $firstQuery = array();
         $secondQuery = array();
 
+        if (!isset($firstUrl['query'])) {
+            $firstUrl['query'] = '';
+        }
+
+        if (!isset($secondUrl['query'])) {
+            $secondUrl['query'] = '';
+        }
+
         parse_str($firstUrl['query'], $firstQuery);
         parse_str($secondUrl['query'], $secondQuery);
 
