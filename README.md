@@ -1,12 +1,17 @@
 # php-vcr-sanitizer
 
-[php-vcr has had "Privacy aware" marked as "soon"](https://php-vcr.github.io/#page-nav-Features) for quite some time now. Whenever I test my APIs, chances are that there will be some sensitive information such as keys or passwords for example. Up until now, I've had a separate script to always sanitize my data in a separate file that isn't ignored by version control.
+[![Packagist](https://img.shields.io/packagist/v/allejo/php-vcr-sanitizer.svg)](https://packagist.org/packages/allejo/php-vcr-sanitizer)
+[![Build Status](https://travis-ci.org/allejo/php-vcr-sanitizer.svg?branch=master)](https://travis-ci.org/allejo/php-vcr-sanitizer)
+[![GitHub license](https://img.shields.io/github/license/allejo/php-vcr-sanitizer.svg)](https://github.com/allejo/php-vcr-sanitizer/blob/master/LICENSE.md)
 
-This is a quick and dirty solution until php-vcr officially adds support for this.
+
+[php-vcr](https://php-vcr.github.io/) is a tool for recording and replaying outgoing requests, however it has had ["Privacy aware" marked as "soon"](https://php-vcr.github.io/#page-nav-Features) for quite some time now. Whenever I test my APIs, there will often be some sensitive information such as keys or passwords in the recordings. Up until now, I've had a separate script to always remove sensitive data before getting checked into version control.
+
+I got tired of having to always sanitize the data, so this is a quick and dirty solution until php-vcr officially supports "private" recordings.
 
 ## Installation
 
-Install the package through Composer.
+Install the package through [Composer](https://getcomposer.org/).
 
 ```bash
 composer require allejo/php-vcr-sanitizer
