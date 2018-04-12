@@ -1,4 +1,4 @@
-# php-vcr-sanitzer
+# php-vcr-sanitizer
 
 [php-vcr has had "Privacy aware" marked as "soon"](https://php-vcr.github.io/#page-nav-Features) for quite some time now. Whenever I test my APIs, chances are that there will be some sensitive information such as keys or passwords for example. Up until now, I've had a separate script to always sanitize my data in a separate file that isn't ignored by version control.
 
