@@ -30,6 +30,16 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
     public function onBeforeRecord(BeforeRecordEvent $event)
     {
         $this->sanitizeUrl($event->getRequest());
+        $this->sanitizeHeaders($event->getRequest());
+    }
+
+    public function sanitizeHeaders(Request $request)
+    {
+        $options = RelaxedRequestMatcher::getConfigurationOptions();
+
+        foreach ($options['ignoreHeaders'] as $header) {
+            $request->setHeader($header, null);
+        }
     }
 
     private function sanitizeUrl(Request $request)
