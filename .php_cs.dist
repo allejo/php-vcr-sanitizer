@@ -1,0 +1,54 @@
+<?php
+
+/*
+ * (c) Copyright 2018 Vladimir Jimenez
+ *
+ * For the full copyright and license information, please view the LICENSE.md
+ * file that was distributed with this source code.
+ */
+
+$finder = PhpCsFixer\Finder::create()
+    ->in('src')
+    ->in('tests')
+;
+
+$licenseHeader = <<<EOL
+(c) Copyright 2018 Vladimir Jimenez
+
+For the full copyright and license information, please view the LICENSE.md
+file that was distributed with this source code.
+EOL;
+
+return PhpCsFixer\Config::create()
+    ->setRules(array(
+        '@Symfony' => true,
+        'array_syntax' => array('syntax' => 'long'),
+        'concat_space' => array('spacing' => 'one'),
+        'header_comment' => array(
+            'header' => $licenseHeader,
+            'commentType' => 'comment',
+            'location' => 'after_open',
+            'separate' => 'both',
+        ),
+        'no_short_echo_tag' => true,
+        'no_unused_imports' => true,
+        'no_useless_else' => true,
+        'no_useless_return' => true,
+        'no_whitespace_in_blank_line' => true,
+        'ordered_imports' => array(
+            'sortAlgorithm' => 'alpha',
+            'importsOrder' => array(
+                'const',
+                'class',
+                'function',
+            ),
+        ),
+        'phpdoc_add_missing_param_annotation' => array('only_untyped' => false),
+        'phpdoc_order' => true,
+        'yoda_style' => array(
+            'equal' => false,
+            'identical' => false,
+        ),
+    ))
+    ->setFinder($finder)
+;
