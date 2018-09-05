@@ -137,4 +137,30 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('X-Type', $vcrFile);
         $this->assertContains('application/vcr', $vcrFile);
     }
+
+    public function testCurlCallWithSensitiveBody()
+    {
+        $newFile = $this->getCassetteContent();
+
+        $this->assertEmpty($newFile);
+
+        VCRCleaner::enable(
+            array(
+                'bodyScrubbers' => array(
+                    function ($body) {
+                        return str_replace('VerySecret', 'REDACTED', $body);
+                    },
+                ),
+            )
+        );
+
+        $curl = new Curl();
+        $curl->post('https://www.example.com/search', 'SomethingPublic SomethingVerySecret');
+        $curl->close();
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertNotContains('VerySecret', $vcrFile);
+        $this->assertContains('REDACTED', $vcrFile);
+    }
 }
