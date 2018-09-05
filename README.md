@@ -34,7 +34,7 @@ VCRCleaner::enable(array(
     ),
     'bodyScrubbers' => array(function($body) {
         return preg_replace('/<password.*<\/password>/', '', $body);
-    })
+    }),
 ));
 ```
 
