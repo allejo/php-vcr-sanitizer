@@ -145,7 +145,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($newFile);
 
         VCRCleaner::enable(array(
-            'bodyScrubber' => function(string $body) {
+            'bodyScrubber' => function($body) {
                 return preg_replace('/VerySecret/', 'REDACTED', $body);
             },
         ));
