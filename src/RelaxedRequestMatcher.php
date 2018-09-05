@@ -21,7 +21,7 @@ class RelaxedRequestMatcher
             array(
                 'ignoreUrlParameters' => array(),
                 'ignoreHeaders'       => array(),
-                'bodyScrubber'        => array(),
+                'bodyScrubbers'       => array(),
             ),
             $options
         );
@@ -80,7 +80,7 @@ class RelaxedRequestMatcher
 
     public static function matchBody(Request $first, Request $second)
     {
-        $converters = self::$options['bodyScrubber'];
+        $converters = self::$options['bodyScrubbers'];
         $firstBody = $first->getBody();
         $secondBody = $second->getBody();
         foreach ($converters as $converter) {

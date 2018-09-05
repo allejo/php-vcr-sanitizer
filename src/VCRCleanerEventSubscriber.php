@@ -100,8 +100,8 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
     {
         $body = $request->getBody();
         $options = RelaxedRequestMatcher::getConfigurationOptions();
-        foreach ($options['bodyScrubber'] as $scubber) {
-            $body = $scubber($body);
+        foreach ($options['bodyScrubbers'] as $scrubber) {
+            $body = $scrubber($body);
         }
 
         $request->setBody($body);

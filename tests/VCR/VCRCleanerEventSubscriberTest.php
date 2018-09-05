@@ -144,11 +144,15 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEmpty($newFile);
 
-        VCRCleaner::enable(array(
-            'bodyScrubber' => function($body) {
-                return preg_replace('/VerySecret/', 'REDACTED', $body);
-            },
-        ));
+        VCRCleaner::enable(
+            array(
+                'bodyScrubbers' => array(
+                    function ($body) {
+                        return str_replace('VerySecret', 'REDACTED', $body);
+                    },
+                ),
+            )
+        );
 
         $curl = new Curl();
         $curl->post('https://www.example.com/search', 'SomethingPublic SomethingVerySecret');
