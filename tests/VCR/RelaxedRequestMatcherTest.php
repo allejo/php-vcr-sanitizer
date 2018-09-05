@@ -64,9 +64,11 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
         );
         RelaxedRequestMatcher::configureOptions(
             array(
-                'bodyScrubber' => function ($body) {
-                    return str_replace('SuperSecret', '', $body);
-                },
+                'bodyScrubbers' => array(
+                    function ($body) {
+                        return str_replace('SuperSecret', '', $body);
+                    },
+                ),
             )
         );
         $this->assertFalse(RequestMatcher::matchBody($actualRequest, $cleanRequest));
