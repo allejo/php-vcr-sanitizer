@@ -33,7 +33,7 @@ VCRCleaner::enable(array(
         'X-Api-Key',
     ),
     'bodyScrubbers' => array(function($body) {
-        return str_replace('Hunter2', '', $body);
+        return preg_replace('/<password.*<\/password>/', '', $body);
     })
 ));
 ```
