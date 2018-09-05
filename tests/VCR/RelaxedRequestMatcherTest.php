@@ -45,4 +45,31 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse(RequestMatcher::matchHeaders($actualRequest, $cleanRequest));
         $this->assertTrue(RelaxedRequestMatcher::matchHeaders($actualRequest, $cleanRequest));
     }
+
+    public function testRelaxedRequestMatcherBody()
+    {
+        $actualRequest = Request::fromArray(
+            array(
+                'method' => 'POST',
+                'url'    => 'http://example.com/api/v2',
+                'body'   => 'This is not secret, but this is SuperSecret',
+            )
+        );
+        $cleanRequest = Request::fromArray(
+            array(
+                'method' => 'POST',
+                'url'    => 'http://example.com/api/v2',
+                'body'   => 'This is not secret, but this is ',
+            )
+        );
+        RelaxedRequestMatcher::configureOptions(
+            array(
+                'bodyScrubber' => function ($body) {
+                    return str_replace('SuperSecret', '', $body);
+                },
+            )
+        );
+        $this->assertFalse(RequestMatcher::matchBody($actualRequest, $cleanRequest));
+        $this->assertTrue(RelaxedRequestMatcher::matchBody($actualRequest, $cleanRequest));
+    }
 }
