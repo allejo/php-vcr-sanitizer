@@ -32,6 +32,9 @@ VCRCleaner::enable(array(
     'ignoreHeaders' => array(
         'X-Api-Key',
     ),
+    'bodyScrubbers' => array(function($body) {
+        return str_replace('Hunter2', '', $body);
+    })
 ));
 ```
 
