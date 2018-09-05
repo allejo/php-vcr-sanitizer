@@ -20,6 +20,7 @@ class VCRCleaner
         VCR::configure()
             ->addRequestMatcher('headers', array('allejo\VCR\RelaxedRequestMatcher', 'matchHeaders'))
             ->addRequestMatcher('query_string', array('allejo\VCR\RelaxedRequestMatcher', 'matchQueryString'))
+            ->addRequestMatcher('body', array('allejo\VCR\RelaxedRequestMatcher', 'matchBody'))
         ;
 
         VCR::getEventDispatcher()
