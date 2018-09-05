@@ -84,8 +84,8 @@ class RelaxedRequestMatcher
         $firstBody = $first->getBody();
         $secondBody = $second->getBody();
         foreach ($converters as $converter) {
-            $firstBody = $converter($first->getBody());
-            $secondBody = $converter($second->getBody());
+            $firstBody = $converter($firstBody);
+            $secondBody = $converter($secondBody);
         }
 
         return $firstBody === $secondBody;
