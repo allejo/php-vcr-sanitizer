@@ -17,10 +17,14 @@ class RelaxedRequestMatcher
 
     public static function configureOptions(array $options)
     {
-        self::$options = array_merge_recursive(array(
-            'ignoreUrlParameters' => array(),
-            'ignoreHeaders' => array(),
-        ), $options);
+        self::$options = array_merge_recursive(
+            array(
+                'ignoreUrlParameters' => array(),
+                'ignoreHeaders'       => array(),
+                'bodyScrubbers'       => array(),
+            ),
+            $options
+        );
     }
 
     public static function getConfigurationOptions()
@@ -72,5 +76,18 @@ class RelaxedRequestMatcher
         }
 
         return $firstHeaders === $secondHeaders;
+    }
+
+    public static function matchBody(Request $first, Request $second)
+    {
+        $converters = self::$options['bodyScrubbers'];
+        $firstBody = $first->getBody();
+        $secondBody = $second->getBody();
+        foreach ($converters as $converter) {
+            $firstBody = $converter($firstBody);
+            $secondBody = $converter($secondBody);
+        }
+
+        return $firstBody === $secondBody;
     }
 }

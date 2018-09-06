@@ -32,6 +32,9 @@ VCRCleaner::enable(array(
     'ignoreHeaders' => array(
         'X-Api-Key',
     ),
+    'bodyScrubbers' => array(function($body) {
+        return preg_replace('/<password.*<\/password>/', 'REDACTED', $body);
+    }),
 ));
 ```
 
@@ -58,7 +61,7 @@ Let's say you set the `X-Api-Key` header to `SuperToast`. In your recording, the
             code: '404'
             message: 'Not Found'
         headers: ~
-        body: "...request body..."
+        body: "...response body..."
 ```
 
 ### Hiding URL Parameters
@@ -80,7 +83,30 @@ Notice how `apiKey=yourSecretApiKey` is stripped away in your recording. During 
             code: '404'
             message: 'Not Found'
         headers: ~
-        body: "...request body..."
+        body: "...response body..."
+```
+
+## Hiding body contents
+
+Notice how `<password>Hunter2</password>` has been stripped away from the request body. The callbacks take the body as a string parameter, the modified result has to be returned.
+
+```yaml
+# Your cURL call to: https://www.example.com/search
+# gets recorded like so,
+-
+    request:
+        method: POST
+        url: 'https://www.example.com/search'
+        headers:
+            Host: www.example.com
+        body: "<login><username></username>REDACTED</login>"
+    response:
+        status:
+            http_version: '1.1'
+            code: '404'
+            message: 'Not Found'
+        headers: ~
+        body: "...response body..."
 ```
 
 ## License

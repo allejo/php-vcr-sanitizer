@@ -31,6 +31,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
     {
         $this->sanitizeUrl($event->getRequest());
         $this->sanitizeHeaders($event->getRequest());
+        $this->sanitizeBody($event->getRequest());
     }
 
     public function sanitizeHeaders(Request $request)
@@ -90,5 +91,19 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
             (isset($parts['path']) ? "{$parts['path']}" : '') .
             (isset($parts['query']) ? "?{$parts['query']}" : '') .
             (isset($parts['fragment']) ? "#{$parts['fragment']}" : '');
+    }
+
+    /**
+     * @param Request $request
+     */
+    private function sanitizeBody(Request $request)
+    {
+        $body = $request->getBody();
+        $options = RelaxedRequestMatcher::getConfigurationOptions();
+        foreach ($options['bodyScrubbers'] as $scrubber) {
+            $body = $scrubber($body);
+        }
+
+        $request->setBody($body);
     }
 }
