@@ -86,27 +86,46 @@ Notice how `apiKey=yourSecretApiKey` is stripped away in your recording. During 
         body: "...response body..."
 ```
 
-## Hiding body contents
+### Hiding body contents
+
+Unlike ignoring headers or URL parameters, scrubbing information from the request body makes use of an array of callbacks. The result of each function is passed on to the next function.
 
 Notice how `<password>Hunter2</password>` has been stripped away from the request body. The callbacks take the body as a string parameter, the modified result has to be returned.
 
+```php
+VCRCleaner::enable(
+    array(
+        'bodyScrubbers' => array(
+            function ($body) {
+                $parameters = array();
+
+                parse_str($body, $parameters);
+                unset($parameters['password']);
+
+                return http_build_query($parameters);
+            },
+        ),
+    )
+);
+```
+
 ```yaml
-# Your cURL call to: https://www.example.com/search
-# gets recorded like so,
+# You POST request to `https://www.example.com/search` with a body of
+# `username=AzureDiamond&password=hunter2` gets recorded like so,
 -
     request:
         method: POST
         url: 'https://www.example.com/search'
         headers:
             Host: www.example.com
-        body: "<login><username></username>REDACTED</login>"
+        body: 'username=AzureDiamond'
     response:
         status:
             http_version: '1.1'
             code: '404'
             message: 'Not Found'
         headers: ~
-        body: "...response body..."
+        body: '...response body...'
 ```
 
 ## License
