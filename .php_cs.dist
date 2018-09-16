@@ -23,6 +23,9 @@ return PhpCsFixer\Config::create()
     ->setRules(array(
         '@Symfony' => true,
         'array_syntax' => array('syntax' => 'long'),
+        'binary_operator_spaces' => array(
+            'align_double_arrow' => true,
+        ),
         'concat_space' => array('spacing' => 'one'),
         'header_comment' => array(
             'header' => $licenseHeader,

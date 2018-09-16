@@ -73,7 +73,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $curl = new Curl();
         $curl->get('https://www.example.com/search', array(
             'apiKey' => 'somethingSensitive',
-            'q' => 'keyword',
+            'q'      => 'keyword',
         ));
         $curl->close();
 
@@ -115,7 +115,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         VCRCleaner::enable(array(
             'ignoreUrlParameters' => array('apiKey'),
-            'ignoreHeaders' => array('X-Api-Key'),
+            'ignoreHeaders'       => array('X-Api-Key'),
         ));
 
         $curl = new Curl();
@@ -123,7 +123,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $curl->setHeader('X-Type', 'application/vcr');
         $curl->get('https://www.example.com/search', array(
             'apiKey' => 'somethingSensitive',
-            'q' => 'keyword',
+            'q'      => 'keyword',
         ));
         $curl->close();
 

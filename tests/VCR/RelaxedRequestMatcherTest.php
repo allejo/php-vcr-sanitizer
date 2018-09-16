@@ -32,7 +32,7 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
     {
         $actualRequest = new Request('GET', 'http://example.com/api/v1', array(
             'X-API-KEY' => 'SomethingSensitive',
-            'X-Header' => 'something-not-secret',
+            'X-Header'  => 'something-not-secret',
         ));
         $cleanRequest = new Request('GET', 'http://example.com/api/v1', array(
             'X-Header' => 'something-not-secret',
