@@ -34,7 +34,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $this->sanitizeBody($event->getRequest());
     }
 
-    public function sanitizeHeaders(Request $request)
+    private function sanitizeHeaders(Request $request)
     {
         $options = RelaxedRequestMatcher::getConfigurationOptions();
 
