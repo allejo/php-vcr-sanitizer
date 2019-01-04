@@ -14,7 +14,7 @@ I got tired of having to always sanitize the data, so this is a quick and dirty 
 Install the package through [Composer](https://getcomposer.org/).
 
 ```bash
-composer require allejo/php-vcr-sanitizer
+composer require --dev allejo/php-vcr-sanitizer
 ```
 
 ## Usage
