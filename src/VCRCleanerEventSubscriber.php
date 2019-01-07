@@ -29,12 +29,12 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     public function onBeforeRecord(BeforeRecordEvent $event)
     {
-        $this->sanitizeUrl($event->getRequest());
-        $this->sanitizeHeaders($event->getRequest());
-        $this->sanitizeBody($event->getRequest());
+        $this->sanitizeRequestUrl($event->getRequest());
+        $this->sanitizeRequestHeaders($event->getRequest());
+        $this->sanitizeRequestBody($event->getRequest());
     }
 
-    private function sanitizeHeaders(Request $request)
+    private function sanitizeRequestHeaders(Request $request)
     {
         $options = RelaxedRequestMatcher::getConfigurationOptions();
 
@@ -45,7 +45,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         }
     }
 
-    private function sanitizeUrl(Request $request)
+    private function sanitizeRequestUrl(Request $request)
     {
         $options = RelaxedRequestMatcher::getConfigurationOptions();
 
@@ -69,7 +69,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $request->setUrl($newUrl);
     }
 
-    private function sanitizeBody(Request $request)
+    private function sanitizeRequestBody(Request $request)
     {
         $body = $request->getBody();
         $options = RelaxedRequestMatcher::getConfigurationOptions();
