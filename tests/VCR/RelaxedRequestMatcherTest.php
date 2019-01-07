@@ -15,7 +15,20 @@ use VCR\RequestMatcher;
 
 class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
 {
-    public function testRelaxedRequestMatcherUrl()
+    public function testRelaxedRequestMatcherQueryHost()
+    {
+        $actualRequest = new Request('GET', 'http://example.com/api/v1?query=users');
+        $cleanRequest = new Request('GET', 'http://[redacted]/api/v1?query=users');
+
+        RelaxedRequestMatcher::configureOptions(array(
+            'redactHostname' => true,
+        ));
+
+        $this->assertFalse(RequestMatcher::matchHost($actualRequest, $cleanRequest));
+        $this->assertTrue(RelaxedRequestMatcher::matchHost($actualRequest, $cleanRequest));
+    }
+
+    public function testRelaxedRequestMatcherQueryString()
     {
         $actualRequest = new Request('GET', 'http://example.com/api/v1?query=users&apiKey=SomethingSensitive');
         $cleanRequest = new Request('GET', 'http://example.com/api/v1?query=users');
@@ -28,7 +41,7 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(RelaxedRequestMatcher::matchQueryString($actualRequest, $cleanRequest));
     }
 
-    public function testRelaxedRequestMatcherHost()
+    public function testRelaxedRequestMatcherHeaders()
     {
         $actualRequest = new Request('GET', 'http://example.com/api/v1', array(
             'X-API-KEY' => 'SomethingSensitive',

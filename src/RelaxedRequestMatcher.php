@@ -25,6 +25,10 @@ class RelaxedRequestMatcher
             ),
             $options
         );
+
+        if (!isset(self::$options['redactHostname'])) {
+            self::$options['redactHostname'] = false;
+        }
     }
 
     public static function getConfigurationOptions()
@@ -36,12 +40,6 @@ class RelaxedRequestMatcher
     {
         $firstUrl = parse_url($first->getUrl());
         $secondUrl = parse_url($second->getUrl());
-
-        $domainEqual = ($firstUrl['scheme'] == $secondUrl['scheme']) && ($firstUrl['host'] && $secondUrl['host']);
-
-        if (!$domainEqual) {
-            return false;
-        }
 
         $firstQuery = array();
         $secondQuery = array();
@@ -63,6 +61,17 @@ class RelaxedRequestMatcher
         }
 
         return $firstQuery === $secondQuery;
+    }
+
+    public static function matchHost(Request $first, Request $second)
+    {
+        $firstURL = parse_url($first->getUrl());
+        $secondURL = parse_url($second->getUrl());
+
+        unset($firstURL['host']);
+        unset($secondURL['host']);
+
+        return $firstURL === $secondURL;
     }
 
     public static function matchHeaders(Request $first, Request $second)

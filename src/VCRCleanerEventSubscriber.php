@@ -29,6 +29,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     public function onBeforeRecord(BeforeRecordEvent $event)
     {
+        $this->sanitizeRequestHost($event->getRequest());
         $this->sanitizeRequestUrl($event->getRequest());
         $this->sanitizeRequestHeaders($event->getRequest());
         $this->sanitizeRequestBody($event->getRequest());
@@ -43,6 +44,22 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
                 $request->setHeader($header, null);
             }
         }
+    }
+
+    private function sanitizeRequestHost(Request $request)
+    {
+        $options = RelaxedRequestMatcher::getConfigurationOptions();
+
+        if (!$options['redactHostname']) {
+            return;
+        }
+
+        $url = parse_url($request->getUrl());
+        $url['host'] = '[redacted]';
+
+        $newUrl = $this->rebuildUrl($url);
+        $request->setUrl($newUrl);
+        $request->setHeader('Host', '[redacted]');
     }
 
     private function sanitizeRequestUrl(Request $request)
