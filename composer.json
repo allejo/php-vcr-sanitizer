@@ -35,6 +35,6 @@
     "scripts": {
         "test": "phpunit",
         "test-coverage": "phpunit --coverage-clover coverage.clover",
-        "fix": "vendor/bin/php-cs-fixer fix"
+        "fix": "php-cs-fixer fix"
     }
 }
