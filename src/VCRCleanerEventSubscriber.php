@@ -69,6 +69,18 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $request->setUrl($newUrl);
     }
 
+    private function sanitizeBody(Request $request)
+    {
+        $body = $request->getBody();
+        $options = RelaxedRequestMatcher::getConfigurationOptions();
+
+        foreach ($options['bodyScrubbers'] as $scrubber) {
+            $body = $scrubber($body);
+        }
+
+        $request->setBody($body);
+    }
+
     /**
      * Takes the chunks of parse_url() and builds URL from it.
      *
@@ -91,19 +103,5 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
             (isset($parts['path']) ? "{$parts['path']}" : '') .
             (isset($parts['query']) ? "?{$parts['query']}" : '') .
             (isset($parts['fragment']) ? "#{$parts['fragment']}" : '');
-    }
-
-    /**
-     * @param Request $request
-     */
-    private function sanitizeBody(Request $request)
-    {
-        $body = $request->getBody();
-        $options = RelaxedRequestMatcher::getConfigurationOptions();
-        foreach ($options['bodyScrubbers'] as $scrubber) {
-            $body = $scrubber($body);
-        }
-
-        $request->setBody($body);
     }
 }
