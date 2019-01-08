@@ -22,6 +22,8 @@ class RelaxedRequestMatcher
                 'ignoreUrlParameters' => array(),
                 'ignoreHeaders'       => array(),
                 'bodyScrubbers'       => array(),
+                'ignoreResponseHeaders' => array(),
+                'responseBodyScrubbers' => array(),
             ),
             $options
         );
@@ -92,6 +94,7 @@ class RelaxedRequestMatcher
         $converters = self::$options['bodyScrubbers'];
         $firstBody = $first->getBody();
         $secondBody = $second->getBody();
+
         foreach ($converters as $converter) {
             $firstBody = $converter($firstBody);
             $secondBody = $converter($secondBody);

@@ -183,4 +183,51 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertNotContains('www.example.com', $vcrFile);
         $this->assertContains('https://[]/search', $vcrFile);
     }
+
+    public function testCurlCallToModifyResponseHeaders()
+    {
+        $newFile = $this->getCassetteContent();
+        $this->assertEmpty($newFile);
+
+        VCRCleaner::enable(array(
+            'ignoreResponseHeaders' => array(
+                'X-Powered-By',
+            ),
+        ));
+
+        $curl = new Curl();
+        $curl->get('https://reqres.in/api/users/2');
+        $curl->close();
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertNotContains('X-Powered-By: Express', $vcrFile);
+        $this->assertContains('X-Powered-By: null', $vcrFile);
+    }
+
+    public function testCurlCallToModifyResponseBody()
+    {
+        $newFile = $this->getCassetteContent();
+        $this->assertEmpty($newFile);
+
+        VCRCleaner::enable(array(
+            'responseBodyScrubbers' => array(
+                // Remove the avatar attribute from a response
+                function ($bodyAsString) {
+                    $ws = json_decode($bodyAsString, true);
+                    unset($ws['data']['avatar']);
+
+                    return json_encode($ws);
+                },
+            ),
+        ));
+
+        $curl = new Curl();
+        $curl->get('https://reqres.in/api/users/2');
+        $curl->close();
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertNotContains('avatar', $vcrFile);
+    }
 }
