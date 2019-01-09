@@ -35,22 +35,27 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $this->sanitizeRequestHeaders($event->getRequest());
         $this->sanitizeRequestBody($event->getRequest());
 
-        $orgResponse = $event->getResponse();
-        $modResponse = clone $event->getResponse();
-        $this->sanitizeResponseHeaders($modResponse);
-        $this->sanitizeResponseBody($modResponse);
+        $originalRes = $event->getResponse();
+
+        // We use the `toArray()` call here because it's an officially supported
+        // method, meaning we can hope the structure for it will respect BC
+        // promises especially because it has a counterpart, `fromArray()`.
+        $workingRes = $originalRes->toArray();
+        $this->sanitizeResponseHeaders($workingRes);
+        $this->sanitizeResponseBody($workingRes);
 
         // There's no way to handle manipulating the Response object in php-vcr
         // so we'll have to get our hands dirty with reflection and hope this
         // doesn't break in the future.
-        $ref = new \ReflectionClass($orgResponse);
+        $ref = new \ReflectionClass($originalRes);
         $headerProp = $ref->getProperty('headers');
         $headerProp->setAccessible(true);
         $bodyProp = $ref->getProperty('body');
         $bodyProp->setAccessible(true);
 
-        $headerProp->setValue($orgResponse, $modResponse->getHeaders());
-        $bodyProp->setValue($orgResponse, $modResponse->getBody());
+        $modResponse = Response::fromArray($workingRes);
+        $headerProp->setValue($originalRes, $modResponse->getHeaders());
+        $bodyProp->setValue($originalRes, $modResponse->getBody());
     }
 
     private function sanitizeRequestHeaders(Request $request)
@@ -116,30 +121,24 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $request->setBody($body);
     }
 
-    private function sanitizeResponseHeaders(Response &$response)
+    private function sanitizeResponseHeaders(array &$workspace)
     {
         $options = RelaxedRequestMatcher::getConfigurationOptions();
-        $workspace = $response->toArray();
 
         foreach ($options['ignoreResponseHeaders'] as $headerToIgnore) {
             if (isset($workspace['headers'][$headerToIgnore])) {
                 $workspace['headers'][$headerToIgnore] = null;
             }
         }
-
-        $response = Response::fromArray($workspace);
     }
 
-    private function sanitizeResponseBody(Response &$response)
+    private function sanitizeResponseBody(array &$workspace)
     {
         $options = RelaxedRequestMatcher::getConfigurationOptions();
-        $workspace = $response->toArray();
 
         foreach ($options['responseBodyScrubbers'] as $bodyScrubber) {
             $workspace['body'] = $bodyScrubber($workspace['body']);
         }
-
-        $response = Response::fromArray($workspace);
     }
 
     /**
