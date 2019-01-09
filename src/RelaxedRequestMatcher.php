@@ -11,7 +11,10 @@ namespace allejo\VCR;
 
 use VCR\Request;
 
-class RelaxedRequestMatcher
+/**
+ * @internal
+ */
+abstract class RelaxedRequestMatcher
 {
     public static function matchQueryString(Request $first, Request $second)
     {

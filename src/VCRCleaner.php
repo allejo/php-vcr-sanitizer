@@ -11,8 +11,30 @@ namespace allejo\VCR;
 
 use VCR\VCR;
 
-class VCRCleaner
+abstract class VCRCleaner
 {
+    /**
+     * Enable the VCR cleaner to sanitize recordings before they are recorded
+     * and enable sanitized recordings to be used in cassettes.
+     *
+     * ```
+     * $options = [
+     *   'request' => [
+     *     'ignoreHostname'    => boolean
+     *     'ignoreQueryFields' => string[]
+     *     'ignoreHeaders'     => string[]
+     *     'bodyScrubbers'     => Array<(string $body): string>
+     *   ],
+     *   'response' => [
+     *     'ignoreHeaders'     => string[]
+     *     'bodyScrubbers'     => Array<(string $body): string>
+     *   ],
+     * ];
+     * ```
+     *
+     * @param array $options An array with the defined structure. All settings
+     *                       have default values.
+     */
     public static function enable(array $options)
     {
         Config::configureOptions($options);

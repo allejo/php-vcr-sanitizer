@@ -15,6 +15,9 @@ use VCR\Request;
 use VCR\Response;
 use VCR\VCREvents;
 
+/**
+ * @internal
+ */
 class VCRCleanerEventSubscriber implements EventSubscriberInterface
 {
     /**
