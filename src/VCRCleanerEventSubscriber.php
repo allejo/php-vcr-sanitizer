@@ -60,9 +60,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeRequestHeaders(Request $request)
     {
-        $options = RelaxedRequestMatcher::getConfigurationOptions();
-
-        foreach ($options['ignoreHeaders'] as $header) {
+        foreach (Config::getReqIgnoredHeaders() as $header) {
             if ($request->hasHeader($header)) {
                 $request->setHeader($header, null);
             }
@@ -71,9 +69,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeRequestHost(Request $request)
     {
-        $options = RelaxedRequestMatcher::getConfigurationOptions();
-
-        if (!$options['ignoreHostname']) {
+        if (!Config::ignoreReqHostname()) {
             return;
         }
 
@@ -87,8 +83,6 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeRequestUrl(Request $request)
     {
-        $options = RelaxedRequestMatcher::getConfigurationOptions();
-
         $url = parse_url($request->getUrl());
 
         if (!isset($url['query'])) {
@@ -98,7 +92,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $queryParts = array();
         parse_str($url['query'], $queryParts);
 
-        foreach ($options['ignoreUrlParameters'] as $urlParameter) {
+        foreach (Config::getReqIgnoredQueryFields() as $urlParameter) {
             unset($queryParts[$urlParameter]);
         }
 
@@ -112,9 +106,8 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
     private function sanitizeRequestBody(Request $request)
     {
         $body = $request->getBody();
-        $options = RelaxedRequestMatcher::getConfigurationOptions();
 
-        foreach ($options['bodyScrubbers'] as $scrubber) {
+        foreach (Config::getReqBodyScrubbers() as $scrubber) {
             $body = $scrubber($body);
         }
 
@@ -123,9 +116,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeResponseHeaders(array &$workspace)
     {
-        $options = RelaxedRequestMatcher::getConfigurationOptions();
-
-        foreach ($options['ignoreResponseHeaders'] as $headerToIgnore) {
+        foreach (Config::getResIgnoredHeaders() as $headerToIgnore) {
             if (isset($workspace['headers'][$headerToIgnore])) {
                 $workspace['headers'][$headerToIgnore] = null;
             }
@@ -134,9 +125,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeResponseBody(array &$workspace)
     {
-        $options = RelaxedRequestMatcher::getConfigurationOptions();
-
-        foreach ($options['responseBodyScrubbers'] as $bodyScrubber) {
+        foreach (Config::getResBodyScrubbers() as $bodyScrubber) {
             $workspace['body'] = $bodyScrubber($workspace['body']);
         }
     }

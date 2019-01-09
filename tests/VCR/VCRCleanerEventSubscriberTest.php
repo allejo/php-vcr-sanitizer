@@ -47,6 +47,9 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
     {
         // Clear the file
         file_put_contents(vfsStream::url('root/fixtures/cassette.yml'), '');
+
+        $newFile = $this->getCassetteContent();
+        $this->assertEmpty($newFile);
     }
 
     public function tearDown()
@@ -62,12 +65,12 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveUrlParameter()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreUrlParameters' => 'apiKey',
+            'request' => array(
+                'ignoreQueryFields' => array(
+                    'apiKey',
+                ),
+            ),
         ));
 
         $curl = new Curl();
@@ -85,12 +88,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveHeaders()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreHeaders' => array('X-Api-Key'),
+            'request' => array(
+                'ignoreHeaders' => array('X-Api-Key'),
+            ),
         ));
 
         $curl = new Curl();
@@ -109,13 +110,11 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveUrlParametersAndHeaders()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreUrlParameters' => array('apiKey'),
-            'ignoreHeaders'       => array('X-Api-Key'),
+            'request' => array(
+                'ignoreQueryFields' => array('apiKey'),
+                'ignoreHeaders'     => array('X-Api-Key'),
+            ),
         ));
 
         $curl = new Curl();
@@ -140,19 +139,17 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveBody()
     {
-        $newFile = $this->getCassetteContent();
+        $cb = function ($body) {
+            return str_replace('VerySecret', 'REDACTED', $body);
+        };
 
-        $this->assertEmpty($newFile);
-
-        VCRCleaner::enable(
-            array(
+        VCRCleaner::enable(array(
+            'request' => array(
                 'bodyScrubbers' => array(
-                    function ($body) {
-                        return str_replace('VerySecret', 'REDACTED', $body);
-                    },
+                    $cb,
                 ),
-            )
-        );
+            ),
+        ));
 
         $curl = new Curl();
         $curl->post('https://www.example.com/search', 'SomethingPublic SomethingVerySecret');
@@ -166,12 +163,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithRedactedHostname()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreHostname' => true,
+            'request' => array(
+                'ignoreHostname' => true,
+            ),
         ));
 
         $curl = new Curl();
@@ -186,12 +181,11 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallToModifyResponseHeaders()
     {
-        $newFile = $this->getCassetteContent();
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreResponseHeaders' => array(
-                'X-Powered-By',
+            'response' => array(
+                'ignoreHeaders' => array(
+                    'X-Powered-By',
+                ),
             ),
         ));
 
@@ -207,18 +201,19 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallToModifyResponseBody()
     {
-        $newFile = $this->getCassetteContent();
-        $this->assertEmpty($newFile);
+        // Remove the avatar attribute from a response
+        $cb = function ($bodyAsString) {
+            $ws = json_decode($bodyAsString, true);
+            unset($ws['data']['avatar']);
+
+            return json_encode($ws);
+        };
 
         VCRCleaner::enable(array(
-            'responseBodyScrubbers' => array(
-                // Remove the avatar attribute from a response
-                function ($bodyAsString) {
-                    $ws = json_decode($bodyAsString, true);
-                    unset($ws['data']['avatar']);
-
-                    return json_encode($ws);
-                },
+            'response' => array(
+                'bodyScrubbers' => array(
+                    $cb,
+                ),
             ),
         ));
 

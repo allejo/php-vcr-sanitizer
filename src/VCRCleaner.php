@@ -15,7 +15,7 @@ class VCRCleaner
 {
     public static function enable(array $options)
     {
-        RelaxedRequestMatcher::configureOptions($options);
+        Config::configureOptions($options);
 
         VCR::configure()
             ->addRequestMatcher('headers', array('allejo\VCR\RelaxedRequestMatcher', 'matchHeaders'))

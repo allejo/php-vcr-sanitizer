@@ -13,31 +13,6 @@ use VCR\Request;
 
 class RelaxedRequestMatcher
 {
-    private static $options = array();
-
-    public static function configureOptions(array $options)
-    {
-        self::$options = array_merge_recursive(
-            array(
-                'ignoreUrlParameters' => array(),
-                'ignoreHeaders'       => array(),
-                'bodyScrubbers'       => array(),
-                'ignoreResponseHeaders' => array(),
-                'responseBodyScrubbers' => array(),
-            ),
-            $options
-        );
-
-        if (!isset(self::$options['ignoreHostname'])) {
-            self::$options['ignoreHostname'] = false;
-        }
-    }
-
-    public static function getConfigurationOptions()
-    {
-        return self::$options;
-    }
-
     public static function matchQueryString(Request $first, Request $second)
     {
         $firstUrl = parse_url($first->getUrl());
@@ -57,7 +32,7 @@ class RelaxedRequestMatcher
         parse_str($firstUrl['query'], $firstQuery);
         parse_str($secondUrl['query'], $secondQuery);
 
-        foreach (self::$options['ignoreUrlParameters'] as $parameter) {
+        foreach (Config::getReqIgnoredQueryFields() as $parameter) {
             unset($firstQuery[$parameter]);
             unset($secondQuery[$parameter]);
         }
@@ -81,7 +56,7 @@ class RelaxedRequestMatcher
         $firstHeaders = $first->getHeaders();
         $secondHeaders = $second->getHeaders();
 
-        foreach (self::$options['ignoreHeaders'] as $parameter) {
+        foreach (Config::getReqIgnoredHeaders() as $parameter) {
             unset($firstHeaders[$parameter]);
             unset($secondHeaders[$parameter]);
         }
@@ -91,13 +66,13 @@ class RelaxedRequestMatcher
 
     public static function matchBody(Request $first, Request $second)
     {
-        $converters = self::$options['bodyScrubbers'];
+        $bodyScrubbers = Config::getReqBodyScrubbers();
         $firstBody = $first->getBody();
         $secondBody = $second->getBody();
 
-        foreach ($converters as $converter) {
-            $firstBody = $converter($firstBody);
-            $secondBody = $converter($secondBody);
+        foreach ($bodyScrubbers as $bodyScrubber) {
+            $firstBody = $bodyScrubber($firstBody);
+            $secondBody = $bodyScrubber($secondBody);
         }
 
         return $firstBody === $secondBody;
