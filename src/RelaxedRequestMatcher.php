@@ -26,8 +26,8 @@ class RelaxedRequestMatcher
             $options
         );
 
-        if (!isset(self::$options['redactHostname'])) {
-            self::$options['redactHostname'] = false;
+        if (!isset(self::$options['ignoreHostname'])) {
+            self::$options['ignoreHostname'] = false;
         }
     }
 

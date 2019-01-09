@@ -50,16 +50,16 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
     {
         $options = RelaxedRequestMatcher::getConfigurationOptions();
 
-        if (!$options['redactHostname']) {
+        if (!$options['ignoreHostname']) {
             return;
         }
 
         $url = parse_url($request->getUrl());
-        $url['host'] = '[redacted]';
+        $url['host'] = '[]';
 
         $newUrl = $this->rebuildUrl($url);
         $request->setUrl($newUrl);
-        $request->setHeader('Host', '[redacted]');
+        $request->setHeader('Host', null);
     }
 
     private function sanitizeRequestUrl(Request $request)

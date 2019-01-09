@@ -18,10 +18,10 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
     public function testRelaxedRequestMatcherQueryHost()
     {
         $actualRequest = new Request('GET', 'http://example.com/api/v1?query=users');
-        $cleanRequest = new Request('GET', 'http://[redacted]/api/v1?query=users');
+        $cleanRequest = new Request('GET', 'http://[]/api/v1?query=users');
 
         RelaxedRequestMatcher::configureOptions(array(
-            'redactHostname' => true,
+            'ignoreHostname' => true,
         ));
 
         $this->assertFalse(RequestMatcher::matchHost($actualRequest, $cleanRequest));

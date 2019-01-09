@@ -171,7 +171,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($newFile);
 
         VCRCleaner::enable(array(
-            'redactHostname' => true,
+            'ignoreHostname' => true,
         ));
 
         $curl = new Curl();
@@ -181,6 +181,6 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $vcrFile = $this->getCassetteContent();
 
         $this->assertNotContains('www.example.com', $vcrFile);
-        $this->assertContains('[redacted]', $vcrFile);
+        $this->assertContains('https://[]/search', $vcrFile);
     }
 }
