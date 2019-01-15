@@ -184,29 +184,26 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         VCRCleaner::enable(array(
             'response' => array(
                 'ignoreHeaders' => array(
-                    'X-Powered-By',
+                    'X-Cache',
                 ),
             ),
         ));
 
         $curl = new Curl();
-        $curl->get('https://reqres.in/api/users/2');
+        $curl->get('https://www.example.com/search');
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('X-Powered-By: Express', $vcrFile);
-        $this->assertContains('X-Powered-By: null', $vcrFile);
+        $this->assertNotContains('X-Cache: 404-HIT', $vcrFile);
+        $this->assertContains('X-Cache: null', $vcrFile);
     }
 
     public function testCurlCallToModifyResponseBody()
     {
         // Remove the avatar attribute from a response
         $cb = function ($bodyAsString) {
-            $ws = json_decode($bodyAsString, true);
-            unset($ws['data']['avatar']);
-
-            return json_encode($ws);
+            return preg_replace('/404 \- Not Found/', '', $bodyAsString);
         };
 
         VCRCleaner::enable(array(
@@ -218,11 +215,11 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         ));
 
         $curl = new Curl();
-        $curl->get('https://reqres.in/api/users/2');
+        $curl->get('https://www.example.com/search');
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('avatar', $vcrFile);
+        $this->assertNotContains('404 - Not Found', $vcrFile);
     }
 }
