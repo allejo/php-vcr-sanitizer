@@ -47,6 +47,9 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
     {
         // Clear the file
         file_put_contents(vfsStream::url('root/fixtures/cassette.yml'), '');
+
+        $newFile = $this->getCassetteContent();
+        $this->assertEmpty($newFile);
     }
 
     public function tearDown()
@@ -62,12 +65,12 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveUrlParameter()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreUrlParameters' => 'apiKey',
+            'request' => array(
+                'ignoreQueryFields' => array(
+                    'apiKey',
+                ),
+            ),
         ));
 
         $curl = new Curl();
@@ -85,12 +88,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveHeaders()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreHeaders' => array('X-Api-Key'),
+            'request' => array(
+                'ignoreHeaders' => array('X-Api-Key'),
+            ),
         ));
 
         $curl = new Curl();
@@ -109,13 +110,11 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveUrlParametersAndHeaders()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreUrlParameters' => array('apiKey'),
-            'ignoreHeaders'       => array('X-Api-Key'),
+            'request' => array(
+                'ignoreQueryFields' => array('apiKey'),
+                'ignoreHeaders'     => array('X-Api-Key'),
+            ),
         ));
 
         $curl = new Curl();
@@ -140,19 +139,17 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithSensitiveBody()
     {
-        $newFile = $this->getCassetteContent();
+        $cb = function ($body) {
+            return str_replace('VerySecret', 'REDACTED', $body);
+        };
 
-        $this->assertEmpty($newFile);
-
-        VCRCleaner::enable(
-            array(
+        VCRCleaner::enable(array(
+            'request' => array(
                 'bodyScrubbers' => array(
-                    function ($body) {
-                        return str_replace('VerySecret', 'REDACTED', $body);
-                    },
+                    $cb,
                 ),
-            )
-        );
+            ),
+        ));
 
         $curl = new Curl();
         $curl->post('https://www.example.com/search', 'SomethingPublic SomethingVerySecret');
@@ -166,12 +163,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     public function testCurlCallWithRedactedHostname()
     {
-        $newFile = $this->getCassetteContent();
-
-        $this->assertEmpty($newFile);
-
         VCRCleaner::enable(array(
-            'ignoreHostname' => true,
+            'request' => array(
+                'ignoreHostname' => true,
+            ),
         ));
 
         $curl = new Curl();
@@ -182,5 +177,49 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNotContains('www.example.com', $vcrFile);
         $this->assertContains('https://[]/search', $vcrFile);
+    }
+
+    public function testCurlCallToModifyResponseHeaders()
+    {
+        VCRCleaner::enable(array(
+            'response' => array(
+                'ignoreHeaders' => array(
+                    'X-Cache',
+                ),
+            ),
+        ));
+
+        $curl = new Curl();
+        $curl->get('https://www.example.com/search');
+        $curl->close();
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertNotContains('X-Cache: 404-HIT', $vcrFile);
+        $this->assertContains('X-Cache: null', $vcrFile);
+    }
+
+    public function testCurlCallToModifyResponseBody()
+    {
+        // Remove the avatar attribute from a response
+        $cb = function ($bodyAsString) {
+            return preg_replace('/404 \- Not Found/', '', $bodyAsString);
+        };
+
+        VCRCleaner::enable(array(
+            'response' => array(
+                'bodyScrubbers' => array(
+                    $cb,
+                ),
+            ),
+        ));
+
+        $curl = new Curl();
+        $curl->get('https://www.example.com/search');
+        $curl->close();
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertNotContains('404 - Not Found', $vcrFile);
     }
 }
