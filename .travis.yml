@@ -13,7 +13,12 @@ php:
 matrix:
   fast_finish: true
   allow_failures:
-    - php: hhvm # https://github.com/php-vcr/php-vcr/issues/90
+    # Since PHP 8.0.0-dev is the new nightly, some dependencies don't support
+    # it in their Composer files
+    - php: nightly
+
+    # https://github.com/php-vcr/php-vcr/issues/90
+    - php: hhvm
 
 dist: trusty
 sudo: false
