@@ -18,12 +18,13 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
 {
     public function testRelaxedRequestMatcherQueryHost()
     {
-        $actualRequest = new Request('GET', 'http://example.com/api/v1?query=users');
+        $actualRequest = new Request('GET', 'http://example.com/api/v1?query=users&foo=bar');
         $cleanRequest = new Request('GET', 'http://[]/api/v1?query=users');
 
         Config::configureOptions(array(
             'request' => array(
                 'ignoreHostname' => true,
+                'ignoreQueryFields' => array('foo'),
             ),
         ));
 
