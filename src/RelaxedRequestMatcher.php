@@ -48,8 +48,7 @@ abstract class RelaxedRequestMatcher
         $firstURL = parse_url($first->getUrl());
         $secondURL = parse_url($second->getUrl());
 
-        unset($firstURL['host']);
-        unset($secondURL['host']);
+        unset($firstURL['host'], $secondURL['host'], $secondURL['query'], $firstURL['query']);
 
         return $firstURL === $secondURL;
     }
