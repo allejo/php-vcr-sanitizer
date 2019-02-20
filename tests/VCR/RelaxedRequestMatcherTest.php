@@ -16,7 +16,7 @@ use VCR\RequestMatcher;
 
 class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
 {
-    public function testRelaxedRequestMatcherQueryHost()
+    public function testRelaxedRequestMatcherQueryHostEnabled()
     {
         $actualRequest = new Request('GET', 'http://example.com/api/v1?query=users');
         $cleanRequest = new Request('GET', 'http://[]/api/v1?query=users');
@@ -27,8 +27,25 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
+        $this->assertEquals('[]', $cleanRequest->getHost());
         $this->assertFalse(RequestMatcher::matchHost($actualRequest, $cleanRequest));
         $this->assertTrue(RelaxedRequestMatcher::matchHost($actualRequest, $cleanRequest));
+    }
+
+    public function testRelaxedRequestMatcherQueryHostDisabled()
+    {
+        $actualRequest = new Request('GET', 'http://example.com/api/v1?query=users');
+        $cleanRequest = new Request('GET', 'http://[]/api/v1?query=users');
+
+        Config::configureOptions(array(
+            'request' => array(
+                'ignoreHostname' => false,
+            ),
+        ));
+
+        $this->assertEquals('[]', $cleanRequest->getHost());
+        $this->assertFalse(RequestMatcher::matchHost($actualRequest, $cleanRequest));
+        $this->assertFalse(RelaxedRequestMatcher::matchHost($actualRequest, $cleanRequest));
     }
 
     public function testRelaxedRequestMatcherQueryString()

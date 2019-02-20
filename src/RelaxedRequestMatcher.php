@@ -45,13 +45,11 @@ abstract class RelaxedRequestMatcher
 
     public static function matchHost(Request $first, Request $second)
     {
-        $firstURL = parse_url($first->getUrl());
-        $secondURL = parse_url($second->getUrl());
+        if (Config::ignoreReqHostname()) {
+            return true;
+        }
 
-        unset($firstURL['host']);
-        unset($secondURL['host']);
-
-        return $firstURL === $secondURL;
+        return $first->getHost() === $second->getHost();
     }
 
     public static function matchHeaders(Request $first, Request $second)
