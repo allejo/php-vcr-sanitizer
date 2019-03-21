@@ -128,6 +128,10 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeResponseBody(array &$workspace)
     {
+        if (!isset($workspace['body'])) {
+            return;
+        }
+
         foreach (Config::getResBodyScrubbers() as $bodyScrubber) {
             $workspace['body'] = $bodyScrubber($workspace['body']);
         }
