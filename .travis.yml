@@ -7,6 +7,7 @@ php:
   - 7.1
   - 7.2
   - 7.3
+  - 7.4snapshot
   - nightly
   - hhvm
 
@@ -20,6 +21,10 @@ matrix:
     # https://github.com/php-vcr/php-vcr/issues/90
     - php: hhvm
 
+    # Not 100% sure why this one is failing but we can get to it when 7.4-dev
+    # becomes 7.4.0
+    - php: 7.4snapshot
+
 dist: trusty
 sudo: false
 
@@ -32,6 +37,7 @@ before_script:
   - composer self-update -q
   - if [ -n "$GH_TOKEN" ]; then composer config github-oauth.github.com ${GH_TOKEN}; fi;
   - composer install --no-interaction --prefer-dist
+  - composer show
 
 script:
   - mkdir -p build/logs
