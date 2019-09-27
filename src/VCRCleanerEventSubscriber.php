@@ -16,7 +16,15 @@ use VCR\Response;
 use VCR\VCREvents;
 
 /**
+ * The event subscriber that this library registers to manipulate the cassette
+ * recordings before they're written to the file.
+ *
+ * Headers are case-insensitive. So all header manipulation happens in a
+ * case-insensitive manner.
+ *
  * @internal
+ *
+ * @see https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
  */
 class VCRCleanerEventSubscriber implements EventSubscriberInterface
 {
@@ -63,9 +71,17 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeRequestHeaders(Request $request)
     {
+        $caseInsensitiveKeys = [];
+
+        foreach ($request->getHeaders() as $key => $value) {
+            $caseInsensitiveKeys[strtolower($key)] = $key;
+        }
+
         foreach (Config::getReqIgnoredHeaders() as $header) {
-            if ($request->hasHeader($header)) {
-                $request->setHeader($header, null);
+            $targetHeader = $caseInsensitiveKeys[strtolower($header)];
+
+            if ($request->hasHeader($targetHeader)) {
+                $request->setHeader($targetHeader, null);
             }
         }
     }
@@ -119,9 +135,20 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeResponseHeaders(array &$workspace)
     {
+        // To avoid breaking case-sensitivity in cassettes, keep a record of the
+        // mapping between lowercase to original casing.
+        $caseInsensitiveKeys = [];
+
+        foreach ($workspace['headers'] as $key => $value) {
+            $caseInsensitiveKeys[strtolower($key)] = $key;
+        }
+
         foreach (Config::getResIgnoredHeaders() as $headerToIgnore) {
-            if (isset($workspace['headers'][$headerToIgnore])) {
-                $workspace['headers'][$headerToIgnore] = null;
+            $caseInsensitiveHeader = strtolower($headerToIgnore);
+            $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
+
+            if (isset($workspace['headers'][$targetHeader])) {
+                $workspace['headers'][$targetHeader] = null;
             }
         }
     }
