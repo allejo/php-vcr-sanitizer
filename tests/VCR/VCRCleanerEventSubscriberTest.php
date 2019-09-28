@@ -195,8 +195,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('X-Cache: 404-HIT', $vcrFile);
-        $this->assertContains('X-Cache: null', $vcrFile);
+        $this->assertNotContains('X-Cache: 404-HIT', $vcrFile, '', true);
+        $this->assertContains('X-Cache: null', $vcrFile, '', true);
     }
 
     public function testCurlCallToModifyResponseBody()
