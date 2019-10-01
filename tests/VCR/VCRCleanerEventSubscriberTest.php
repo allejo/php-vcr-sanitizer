@@ -108,6 +108,28 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('application/vcr', $vcrFile);
     }
 
+    public function testCurlCallWithSensitiveHeadersThatDontExist()
+    {
+        VCRCleaner::enable(array(
+            'request' => array(
+                'ignoreHeaders' => array('X-Api-Key'),
+            ),
+            'response' => array(
+                'ignoreHeaders' => array('X-Whatever'),
+            ),
+        ));
+
+        $curl = new Curl();
+        $curl->setHeader('X-Type', 'application/vcr');
+        $curl->get('https://www.example.com/search');
+        $curl->close();
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertContains('X-Type', $vcrFile);
+        $this->assertContains('application/vcr', $vcrFile);
+    }
+
     public function testCurlCallWithSensitiveUrlParametersAndHeaders()
     {
         VCRCleaner::enable(array(
