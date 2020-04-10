@@ -56,6 +56,12 @@ VCRCleaner::enable(array(
                return preg_replace('/<password.*<\/password>/', 'hunter2', $body);
            }
        ),
+       'postFieldScrubbers' => array(
+           function(array $postFields) {
+               $postFields['Secret'] = 'REDACTED';
+               return $postFields;
+           }
+       ),
    ),
    'response' => array(
        'ignoreHeaders' => array(),
@@ -74,6 +80,7 @@ This library allows your sanitize both the Request and Response sections of your
 - `request.ignoreQueryFields` - Define which GET parameters in your URL to completely strip out of your recordings.
 - `request.ignoreHeaders` - Define the headers in your recording that will automatically be set to null in your recordings
 - `request.bodyScrubbers` - An array of callbacks that will have the request body available as a string. Each callback **must** return the modified body. The callbacks are called consecutively in the order they appear in this array and the value from one callback propagates to the next.
+- `request.postFieldScrubbers` - An array of callbacks that will have the request post fields available as an array. Each callback **must** return the modified post fields array. The callbacks are called consecutively in the order they appear in this array and the value from one callback propagates to the next.
 
 #### Sanitizing Responses
 
@@ -197,6 +204,43 @@ VCRCleaner::enable(array(
         body: '...response body...'
 ```
 
+### Post Field Content
+
+When making POST requests, you VCR will sometimes record the data inside of a `post_fields` parameter rather than the `body`. In those cases, this option can be used to sanitize sensitive content. Note that unlike the `body` field, `post_fields` is an array:
+
+```php
+VCRCleaner::enable(array(
+    'request' => array(
+        'postFieldScrubber' => array(
+            function (array $postFields) {
+                $postFields['Secret_Key'] = '';
+                return $postFields;
+            },
+        ),
+    ),
+));
+```
+
+```yaml
+# You POST request to `https://www.example.com/search` with a post field of
+# `['data'=> 'hello world', 'Secret_Key' => 'abc']` gets recorded like so,
+-
+    request:
+        method: POST
+        url: 'https://www.example.com/search'
+        headers:
+            Host: www.example.com
+        post_fields:
+            data: 'hello world'
+            Secret_Key: ''
+    response:
+        status:
+            http_version: '1.1'
+            code: '404'
+            message: 'Not Found'
+        headers: ~
+        body: '...response body...'
+```
 ## License
 
 [MIT](/LICENSE.md)

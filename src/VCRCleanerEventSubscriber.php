@@ -45,6 +45,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $this->sanitizeRequestUrl($event->getRequest());
         $this->sanitizeRequestHeaders($event->getRequest());
         $this->sanitizeRequestBody($event->getRequest());
+        $this->sanitizeRequestPostFields($event->getRequest());
 
         $originalRes = $event->getResponse();
 
@@ -71,7 +72,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeRequestHeaders(Request $request)
     {
-        $caseInsensitiveKeys = [];
+        $caseInsensitiveKeys = array();
 
         foreach ($request->getHeaders() as $key => $value) {
             $caseInsensitiveKeys[strtolower($key)] = $key;
@@ -139,11 +140,22 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $request->setBody($body);
     }
 
+    private function sanitizeRequestPostFields(Request $request)
+    {
+        $postFields = $request->getPostFields();
+
+        foreach (Config::getReqPostFieldScrubbers() as $scrubber) {
+            $postFields = $scrubber($postFields);
+        }
+
+        $request->setPostFields($postFields);
+    }
+
     private function sanitizeResponseHeaders(array &$workspace)
     {
         // To avoid breaking case-sensitivity in cassettes, keep a record of the
         // mapping between lowercase to original casing.
-        $caseInsensitiveKeys = [];
+        $caseInsensitiveKeys = array();
 
         foreach ($workspace['headers'] as $key => $value) {
             $caseInsensitiveKeys[strtolower($key)] = $key;

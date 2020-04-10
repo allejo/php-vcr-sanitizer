@@ -183,6 +183,38 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('REDACTED', $vcrFile);
     }
 
+    public function testCurlCallWithSensitivePostField()
+    {
+        $cb = function (array $postFields) {
+            $postFields['VerySecret'] = 'REDACTED';
+
+            return $postFields;
+        };
+
+        VCRCleaner::enable(array(
+            'request' => array(
+                'postFieldScrubbers' => array(
+                    $cb,
+                ),
+            ),
+        ));
+
+        $curl = new Curl();
+        $secret = 'Do not tell anyone this secret';
+        $postFields = array(
+            'SomethingPublic' => 'Not a secret',
+            'VerySecret'      => $secret,
+        );
+        $curl->setOpt(CURLOPT_POSTFIELDS, $postFields);
+        $curl->post('https://www.example.com/search');
+        $curl->close();
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertNotContains($secret, $vcrFile);
+        $this->assertContains('REDACTED', $vcrFile);
+    }
+
     public function testCurlCallWithRedactedHostname()
     {
         VCRCleaner::enable(array(
