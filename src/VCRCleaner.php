@@ -20,10 +20,11 @@ abstract class VCRCleaner
      * ```
      * $options = [
      *   'request' => [
-     *     'ignoreHostname'    => boolean
-     *     'ignoreQueryFields' => string[]
-     *     'ignoreHeaders'     => string[]
-     *     'bodyScrubbers'     => Array<(string $body): string>
+     *     'ignoreHostname'     => boolean
+     *     'ignoreQueryFields'  => string[]
+     *     'ignoreHeaders'      => string[]
+     *     'bodyScrubbers'      => Array<(string $body): string>
+     *     'postFieldScrubbers' => Array<(array $postFields): array>
      *   ],
      *   'response' => [
      *     'ignoreHeaders'     => string[]

@@ -41,6 +41,11 @@ abstract class Config
         return self::$options['request']['bodyScrubbers'];
     }
 
+    public static function getReqPostFieldScrubbers()
+    {
+        return self::$options['request']['postFieldScrubbers'];
+    }
+
     public static function getResIgnoredHeaders()
     {
         return self::$options['response']['ignoreHeaders'];
@@ -59,6 +64,7 @@ abstract class Config
                 'ignoreQueryFields' => array(),
                 'ignoreHeaders'     => array(),
                 'bodyScrubbers'     => array(),
+                'postFieldScrubbers'=> array(),
             ),
             'response' => array(
                 'ignoreHeaders'     => array(),
