@@ -241,6 +241,7 @@ VCRCleaner::enable(array(
         headers: ~
         body: '...response body...'
 ```
+
 ## License
 
 [MIT](/LICENSE.md)
