@@ -11,11 +11,16 @@ namespace allejo\VCR\Tests;
 
 use allejo\VCR\VCRCleaner;
 use Curl\Curl;
+use donatj\MockWebServer\MockWebServer;
+use donatj\MockWebServer\Response;
 use org\bovigo\vfs\vfsStream;
 use VCR\VCR;
 
 class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 {
+    /** @var MockWebServer */
+    private $server;
+
     public static function setUpBeforeClass()
     {
         $root = vfsStream::setup('root');
@@ -50,17 +55,38 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $newFile = $this->getCassetteContent();
         $this->assertEmpty($newFile);
+
+        $this->server = new MockWebServer();
+        $this->server->setResponseOfPath(
+            '/search',
+            new Response(
+                '{"status": 200}',
+                array(
+                    'Content-Type' => 'application/json',
+                    'X-Cache'      => 'true',
+                ),
+                200
+            )
+        );
+        $this->server->start();
     }
 
     public function tearDown()
     {
         // Remove any settings from tests
         VCRCleaner::enable(array());
+
+        $this->server->stop();
     }
 
     private function getCassetteContent()
     {
         return file_get_contents(vfsStream::url('root/fixtures/cassette.yml'));
+    }
+
+    private function getApiUrl()
+    {
+        return $this->server->getServerRoot() . '/search';
     }
 
     public function testCurlCallWithSensitiveUrlParameter()
@@ -74,7 +100,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         ));
 
         $curl = new Curl();
-        $curl->get('https://www.example.com/search', array(
+        $curl->get($this->getApiUrl(), array(
             'apiKey' => 'somethingSensitive',
             'q'      => 'keyword',
         ));
@@ -83,7 +109,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $vcrFile = $this->getCassetteContent();
 
         $this->assertNotContains('somethingSensitive', $vcrFile);
-        $this->assertContains('www.example.com/search', $vcrFile);
+        $this->assertContains($this->getApiUrl(), $vcrFile);
     }
 
     public function testCurlCallWithSensitiveHeaders()
@@ -97,7 +123,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $curl = new Curl();
         $curl->setHeader('X-Api-Key', 'SuperToast');
         $curl->setHeader('X-Type', 'application/vcr');
-        $curl->get('https://www.example.com/search');
+        $curl->get($this->getApiUrl());
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
@@ -121,7 +147,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $curl = new Curl();
         $curl->setHeader('X-Type', 'application/vcr');
-        $curl->get('https://www.example.com/search');
+        $curl->get($this->getApiUrl());
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
@@ -142,7 +168,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $curl = new Curl();
         $curl->setHeader('X-Api-Key', 'SuperToast');
         $curl->setHeader('X-Type', 'application/vcr');
-        $curl->get('https://www.example.com/search', array(
+        $curl->get($this->getApiUrl(), array(
             'apiKey' => 'somethingSensitive',
             'q'      => 'keyword',
         ));
@@ -174,7 +200,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         ));
 
         $curl = new Curl();
-        $curl->post('https://www.example.com/search', 'SomethingPublic SomethingVerySecret');
+        $curl->post($this->getApiUrl(), 'SomethingPublic SomethingVerySecret');
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
@@ -206,7 +232,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             'VerySecret'      => $secret,
         );
         $curl->setOpt(CURLOPT_POSTFIELDS, $postFields);
-        $curl->post('https://www.example.com/search');
+        $curl->post($this->getApiUrl());
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
@@ -221,16 +247,21 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             'request' => array(
                 'ignoreHostname' => true,
             ),
+            'response' => array(
+                'ignoreHeaders' => array(
+                    'Host',
+                ),
+            ),
         ));
 
         $curl = new Curl();
-        $curl->get('https://www.example.com/search');
+        $curl->get($this->getApiUrl());
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('www.example.com', $vcrFile);
-        $this->assertContains('https://[]/search', $vcrFile);
+        $this->assertNotContains($this->server->getHost(), $vcrFile);
+        $this->assertContains(sprintf('http://[]:%d/search', $this->server->getPort()), $vcrFile);
     }
 
     public function testCurlCallToModifyResponseHeaders()
@@ -244,7 +275,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         ));
 
         $curl = new Curl();
-        $curl->get('https://www.example.com/search');
+        $curl->get($this->getApiUrl());
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
@@ -257,7 +288,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
     {
         // Remove the avatar attribute from a response
         $cb = function ($bodyAsString) {
-            return preg_replace('/404 \- Not Found/', '', $bodyAsString);
+            return preg_replace('/\{"status":/', '', $bodyAsString);
         };
 
         VCRCleaner::enable(array(
@@ -269,11 +300,11 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         ));
 
         $curl = new Curl();
-        $curl->get('https://www.example.com/search');
+        $curl->get($this->getApiUrl());
         $curl->close();
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('404 - Not Found', $vcrFile);
+        $this->assertNotContains('{"status":', $vcrFile);
     }
 }
