@@ -64,6 +64,7 @@ abstract class Config
                 'ignoreQueryFields' => array(),
                 'ignoreHeaders'     => array(),
                 'bodyScrubbers'     => array(),
+                'postFieldScrubbers'=> array(),
             ),
             'response' => array(
                 'ignoreHeaders'     => array(),
