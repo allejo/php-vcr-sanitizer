@@ -206,7 +206,7 @@ VCRCleaner::enable(array(
 
 ### Post Field Content
 
-When making POST requests, your VCR will sometimes record the data inside of a `post_fields` parameter rather than the `body`; e.g. when `CURLOPT_POSTFIELDS` is used in cURL. In those cases, this option can be used to sanitize sensitive content. Note that unlike the `body` field, `post_fields` is an array:
+When making POST requests, your VCR will sometimes record the data inside of a `post_fields` parameter rather than the `body`; e.g. when `CURLOPT_POSTFIELDS` is used in cURL and you do not set `CURLOPT_POST` to `true`. In those cases, this option can be used to sanitize sensitive content. Note that unlike the `body` field, `post_fields` is an array:
 
 ```php
 VCRCleaner::enable(array(
