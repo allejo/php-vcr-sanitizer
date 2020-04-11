@@ -78,4 +78,18 @@ abstract class RelaxedRequestMatcher
 
         return $firstBody === $secondBody;
     }
+
+    public static function matchPostFields(Request $first, Request $second)
+    {
+        $bodyScrubbers = Config::getReqPostFieldScrubbers();
+        $firstPostFields = $first->getPostFields();
+        $secondPostFields = $second->getPostFields();
+
+        foreach ($bodyScrubbers as $bodyScrubber) {
+            $firstPostFields = $bodyScrubber($firstPostFields);
+            $secondPostFields = $bodyScrubber($secondPostFields);
+        }
+
+        return $firstPostFields === $secondPostFields;
+    }
 }

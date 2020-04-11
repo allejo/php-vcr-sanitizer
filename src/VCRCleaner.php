@@ -45,6 +45,7 @@ abstract class VCRCleaner
             ->addRequestMatcher('host', array('allejo\VCR\RelaxedRequestMatcher', 'matchHost'))
             ->addRequestMatcher('query_string', array('allejo\VCR\RelaxedRequestMatcher', 'matchQueryString'))
             ->addRequestMatcher('body', array('allejo\VCR\RelaxedRequestMatcher', 'matchBody'))
+            ->addRequestMatcher('post_fields', array('allejo\VCR\RelaxedRequestMatcher', 'matchPostFields'))
         ;
 
         VCR::getEventDispatcher()

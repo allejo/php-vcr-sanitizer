@@ -114,4 +114,44 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse(RequestMatcher::matchBody($actualRequest, $cleanRequest));
         $this->assertTrue(RelaxedRequestMatcher::matchBody($actualRequest, $cleanRequest));
     }
+
+    public function testRelaxedRequestMatcherPostFields()
+    {
+        $actualRequest = Request::fromArray(
+            array(
+                'method' => 'POST',
+                'url'    => 'http://example.com/api/v2',
+                'post_fields' => [
+                    'Something Public' => 'public',
+                    'VerySecret'       => 'Do not tell anyone this secret',
+                ],
+            )
+        );
+
+        $cleanRequest = Request::fromArray(
+            array(
+                'method' => 'POST',
+                'url'    => 'http://example.com/api/v2',
+                'post_fields' => [
+                    'Something Public' => 'public',
+                    'VerySecret'       => 'REDACTED',
+                ],
+            )
+        );
+
+        Config::configureOptions(array(
+            'request' => array(
+                'postFieldScrubbers' => array(
+                    function (array $postFields) {
+                        $postFields['VerySecret'] = 'REDACTED';
+
+                        return $postFields;
+                    },
+                ),
+            ),
+        ));
+
+        $this->assertFalse(RequestMatcher::matchPostFields($actualRequest, $cleanRequest));
+        $this->assertTrue(RelaxedRequestMatcher::matchPostFields($actualRequest, $cleanRequest));
+    }
 }
