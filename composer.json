@@ -3,8 +3,8 @@
     "description": "A set of php-vcr utilities to sanitize API requests",
     "type": "library",
     "require": {
-        "php-vcr/php-vcr": "^1.4",
-        "symfony/event-dispatcher": "^2.4|^3.0|^4.0"
+        "php-vcr/php-vcr": "^1.5",
+        "symfony/event-dispatcher": "^5.0"
     },
     "require-dev": {
         "donatj/mock-webserver": "^2.1",
@@ -12,6 +12,12 @@
         "php-curl-class/php-curl-class": "^8.0",
         "phpunit/phpunit": "^4.8|^5.0|^7.0"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/thecoderszone/php-vcr"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "allejo\\VCR\\": "src/"
