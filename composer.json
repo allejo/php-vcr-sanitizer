@@ -3,7 +3,7 @@
     "description": "A set of php-vcr utilities to sanitize API requests",
     "type": "library",
     "require": {
-        "php-vcr/php-vcr": "^1.5",
+        "php-vcr/php-vcr": "^1.8",
         "symfony/event-dispatcher": "^5.0"
     },
     "require-dev": {
