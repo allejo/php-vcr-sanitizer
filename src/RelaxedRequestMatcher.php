@@ -58,6 +58,11 @@ abstract class RelaxedRequestMatcher
         $secondHeaders = $second->getHeaders();
 
         foreach (Config::getReqIgnoredHeaders() as $parameter) {
+            if ($parameter === '*') {
+                $firstHeaders = null;
+                $secondHeaders = null;
+            }
+            
             unset($firstHeaders[$parameter]);
             unset($secondHeaders[$parameter]);
         }
