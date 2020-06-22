@@ -84,7 +84,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
                     $request->setHeader($targetHeader, null);
                 }
                 
-                continue;
+                return;
             }
             
             $caseInsensitiveHeader = strtolower($header);
@@ -161,33 +161,35 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
     private function sanitizeResponseHeaders(array &$workspace)
     {
-        if (isset($workspace['headers'])) {
-            // To avoid breaking case-sensitivity in cassettes, keep a record of the
-            // mapping between lowercase to original casing.
-            $caseInsensitiveKeys = array();
-    
-            foreach ($workspace['headers'] as $key => $value) {
-                $caseInsensitiveKeys[strtolower($key)] = $key;
+        if (!isset($workspace['headers'])) {
+            return;
+        }
+        
+        // To avoid breaking case-sensitivity in cassettes, keep a record of the
+        // mapping between lowercase to original casing.
+        $caseInsensitiveKeys = array();
+
+        foreach ($workspace['headers'] as $key => $value) {
+            $caseInsensitiveKeys[strtolower($key)] = $key;
+        }
+
+        foreach (Config::getResIgnoredHeaders() as $headerToIgnore) {
+            if ($headerToIgnore === '*') {
+                $workspace['headers'] = null;
+                
+                return;
             }
-    
-            foreach (Config::getResIgnoredHeaders() as $headerToIgnore) {
-                if ($headerToIgnore === '*') {
-                    $workspace['headers'] = [];
             
-                    continue;
-                }
-        
-                $caseInsensitiveHeader = strtolower($headerToIgnore);
-        
-                if ( ! isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {
-                    continue;
-                }
-        
-                $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
-        
-                if (isset($workspace['headers'][$targetHeader])) {
-                    $workspace['headers'][$targetHeader] = null;
-                }
+            $caseInsensitiveHeader = strtolower($headerToIgnore);
+
+            if (!isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {
+                continue;
+            }
+
+            $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
+
+            if (isset($workspace['headers'][$targetHeader])) {
+                $workspace['headers'][$targetHeader] = null;
             }
         }
     }
