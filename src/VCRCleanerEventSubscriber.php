@@ -83,10 +83,10 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
                 foreach ($request->getHeaders() as $targetHeader => $value) {
                     $request->setHeader($targetHeader, null);
                 }
-                
+
                 return;
             }
-            
+
             $caseInsensitiveHeader = strtolower($header);
 
             if (!isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {
@@ -164,7 +164,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         if (!isset($workspace['headers'])) {
             return;
         }
-        
+
         // To avoid breaking case-sensitivity in cassettes, keep a record of the
         // mapping between lowercase to original casing.
         $caseInsensitiveKeys = array();
@@ -176,10 +176,10 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         foreach (Config::getResIgnoredHeaders() as $headerToIgnore) {
             if ($headerToIgnore === '*') {
                 $workspace['headers'] = null;
-                
+
                 return;
             }
-            
+
             $caseInsensitiveHeader = strtolower($headerToIgnore);
 
             if (!isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {

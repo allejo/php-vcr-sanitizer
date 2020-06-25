@@ -82,21 +82,21 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse(RequestMatcher::matchHeaders($actualRequest, $cleanRequest));
         $this->assertTrue(RelaxedRequestMatcher::matchHeaders($actualRequest, $cleanRequest));
     }
-    
+
     public function testRelaxedRequestMatcherWildcardHeaders()
     {
         $actualRequest = new Request('GET', 'http://example.com/api/v1', array(
             'X-API-KEY' => 'SomethingSensitive',
             'X-Header'  => 'something-not-secret',
         ));
-        $cleanRequest  = new Request('GET', 'http://example.com/api/v1', array());
-        
+        $cleanRequest = new Request('GET', 'http://example.com/api/v1', array());
+
         Config::configureOptions(array(
             'request' => array(
                 'ignoreHeaders' => array('*'),
             ),
         ));
-        
+
         $this->assertFalse(RequestMatcher::matchHeaders($actualRequest, $cleanRequest));
         $this->assertTrue(RelaxedRequestMatcher::matchHeaders($actualRequest, $cleanRequest));
     }

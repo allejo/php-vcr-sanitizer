@@ -133,7 +133,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('X-Type', $vcrFile);
         $this->assertContains('application/vcr', $vcrFile);
     }
-    
+
     public function testCurlCallWithWildcardSensitiveHeaders()
     {
         VCRCleaner::enable(array(
@@ -141,15 +141,15 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
                 'ignoreHeaders' => array('*'),
             ),
         ));
-        
+
         $curl = new Curl();
         $curl->setHeader('X-Api-Key', 'SuperToast');
         $curl->setHeader('X-Type', 'application/vcr');
         $curl->get($this->getApiUrl());
         $curl->close();
-        
+
         $vcrFile = $this->getCassetteContent();
-        
+
         $this->assertContains('X-Api-Key', $vcrFile);
         $this->assertNotContains('SuperToast', $vcrFile);
         $this->assertContains('X-Type', $vcrFile);
@@ -302,10 +302,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('X-Cache: 404-HIT', $vcrFile, '', true);
+        $this->assertNotContains("X-Cache: 'true'", $vcrFile, '', true);
         $this->assertContains('X-Cache: null', $vcrFile, '', true);
     }
-    
+
     public function testCurlCallToModifyWildcardResponseHeaders()
     {
         VCRCleaner::enable(array(
@@ -315,14 +315,14 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
                 ),
             ),
         ));
-        
+
         $curl = new Curl();
         $curl->get($this->getApiUrl());
         $curl->close();
-        
+
         $vcrFile = $this->getCassetteContent();
-        
-        $this->assertNotContains('X-Cache: 404-HIT', $vcrFile, '', true);
+
+        $this->assertNotContains('X-Cache', $vcrFile, '', true);
     }
 
     public function testCurlCallToModifyResponseBody()

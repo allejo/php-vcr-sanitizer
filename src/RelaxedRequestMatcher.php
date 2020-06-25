@@ -61,10 +61,10 @@ abstract class RelaxedRequestMatcher
             if ($parameter === '*') {
                 $firstHeaders = null;
                 $secondHeaders = null;
-                
+
                 break;
             }
-            
+
             unset($firstHeaders[$parameter]);
             unset($secondHeaders[$parameter]);
         }
