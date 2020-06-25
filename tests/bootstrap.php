@@ -11,7 +11,8 @@ require __DIR__ . '/../vendor/autoload.php';
 
 if (PHP_VERSION_ID >= 70100) {
     if (!class_exists('\PHPUnit_Framework_TestCase')) {
-        class PHPUnit_Framework_TestCase extends \PHPUnit\Framework\TestCase {
+        class PHPUnit_Framework_TestCase extends \PHPUnit\Framework\TestCase
+        {
         }
     }
 }

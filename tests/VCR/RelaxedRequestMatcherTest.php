@@ -137,23 +137,23 @@ class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
     {
         $actualRequest = Request::fromArray(
             array(
-                'method' => 'POST',
-                'url'    => 'http://example.com/api/v2',
-                'post_fields' => [
+                'method'      => 'POST',
+                'url'         => 'http://example.com/api/v2',
+                'post_fields' => array(
                     'Something Public' => 'public',
                     'VerySecret'       => 'Do not tell anyone this secret',
-                ],
+                ),
             )
         );
 
         $cleanRequest = Request::fromArray(
             array(
-                'method' => 'POST',
-                'url'    => 'http://example.com/api/v2',
-                'post_fields' => [
+                'method'      => 'POST',
+                'url'         => 'http://example.com/api/v2',
+                'post_fields' => array(
                     'Something Public' => 'public',
                     'VerySecret'       => 'REDACTED',
-                ],
+                ),
             )
         );
 
