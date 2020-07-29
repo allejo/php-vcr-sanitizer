@@ -1,6 +1,6 @@
 {
     "name": "allejo/php-vcr-sanitizer",
-    "description": "A set of php-vcr utilities to sanitize API requests",
+    "description": "Bring privacy to php-vcr by excluding API keys, passwords, and credentials from your recordings",
     "type": "library",
     "require": {
         "php": ">=5.4",
