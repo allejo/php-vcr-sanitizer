@@ -37,7 +37,7 @@ before_script:
 
 script:
   - mkdir -p build/logs
-  - composer test-coverage
+  - composer coverage
 
 after_script:
  - wget https://scrutinizer-ci.com/ocular.phar
