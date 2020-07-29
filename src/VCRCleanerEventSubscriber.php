@@ -55,6 +55,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $workingRes = $originalRes->toArray();
         $this->sanitizeResponseHeaders($workingRes);
         $this->sanitizeResponseBody($workingRes);
+        $this->sanitizeResponseCurlInfo($workingRes);
 
         // There's no way to handle manipulating the Response object in php-vcr
         // so we'll have to get our hands dirty with reflection and hope this
@@ -68,6 +69,13 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $modResponse = Response::fromArray($workingRes);
         $headerProp->setValue($originalRes, $modResponse->getHeaders());
         $bodyProp->setValue($originalRes, $modResponse->getBody());
+
+        // curlInfo was introduced in php-vcr 1.5+
+        if ($ref->hasProperty('curlInfo')) {
+            $curlInfoProp = $ref->getProperty('curlInfo');
+            $curlInfoProp->setAccessible(true);
+            $curlInfoProp->setValue($originalRes, $modResponse->getCurlInfo());
+        }
     }
 
     private function sanitizeRequestHeaders(Request $request)
@@ -81,7 +89,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         foreach (Config::getReqIgnoredHeaders() as $header) {
             if ($header === '*') {
                 foreach ($request->getHeaders() as $targetHeader => $value) {
-                    $request->setHeader($targetHeader, null);
+                    $request->setHeader($targetHeader, '');
                 }
 
                 return;
@@ -96,44 +104,22 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
             $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
 
             if ($request->hasHeader($targetHeader)) {
-                $request->setHeader($targetHeader, null);
+                $request->setHeader($targetHeader, '');
             }
         }
     }
 
     private function sanitizeRequestHost(Request $request)
     {
-        if (!Config::ignoreReqHostname()) {
-            return;
-        }
+        $newUrl = $this->deleteHostFromURL($request->getUrl());
 
-        $url = parse_url($request->getUrl());
-        $url['host'] = '[]';
-
-        $newUrl = $this->rebuildUrl($url);
         $request->setUrl($newUrl);
-        $request->setHeader('Host', null);
+        $request->setHeader('Host', '');
     }
 
     private function sanitizeRequestUrl(Request $request)
     {
-        $url = parse_url($request->getUrl());
-
-        if (!isset($url['query'])) {
-            return;
-        }
-
-        $queryParts = array();
-        parse_str($url['query'], $queryParts);
-
-        foreach (Config::getReqIgnoredQueryFields() as $urlParameter) {
-            unset($queryParts[$urlParameter]);
-        }
-
-        $url['query'] = http_build_query($queryParts);
-
-        $newUrl = $this->rebuildUrl($url);
-
+        $newUrl = $this->delQueryFieldsFromURL($request->getUrl(), Config::getReqIgnoredQueryFields());
         $request->setUrl($newUrl);
     }
 
@@ -203,6 +189,109 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         foreach (Config::getResBodyScrubbers() as $bodyScrubber) {
             $workspace['body'] = $bodyScrubber($workspace['body']);
         }
+    }
+
+    private function sanitizeResponseCurlInfo(array &$workspace)
+    {
+        if (!isset($workspace['curl_info'])) {
+            return;
+        }
+
+        // `curl_info` has a duplicate of the target URL, let's clear that out as well
+        $requestUrl = $workspace['curl_info']['url'];
+        $requestUrl = $this->deleteHostFromURL($requestUrl);
+        $workspace['curl_info']['url'] = $this->delQueryFieldsFromURL($requestUrl, Config::getReqIgnoredQueryFields());
+
+        if (Config::ignoreReqHostname()) {
+            $workspace['curl_info']['primary_ip'] = '';
+        }
+
+        // `curl_info` has a duplicate of Request headers too
+        $splitHeaders = preg_split('/(\r\n)|(\n)/', $workspace['curl_info']['request_header']);
+
+        // Remove sensitive query parameters from the duplicated URL
+        $matches = array();
+        preg_match('/[A-Z]+ (.+) HTTP/', $splitHeaders[0], $matches);
+        if (isset($matches[1])) {
+            $splitHeaders[0] = str_replace(
+                $matches[1],
+                $this->delQueryFieldsFromURL($matches[1], Config::getReqIgnoredQueryFields()),
+                $splitHeaders[0]
+            );
+        }
+
+        $headerWildcard = in_array('*', Config::getReqIgnoredHeaders(), true);
+
+        foreach ($splitHeaders as &$line) {
+            $matches = array();
+
+            if (preg_match('/^([\w\-]+): (.+)/', $line, $matches) !== 1) {
+                continue;
+            }
+
+            if (count($matches) !== 3) {
+                continue;
+            }
+
+            if ($headerWildcard || in_array($matches[1], Config::getReqIgnoredHeaders(), true)) {
+                $line = sprintf('%s: ""', $matches[1]);
+                continue;
+            }
+
+            if ($matches[1] === 'Host') {
+                $line = sprintf('%s: %s', $matches[1], str_replace('//', '', $this->deleteHostFromURL($matches[2])));
+            }
+        }
+
+        unset($line);
+
+        $workspace['curl_info']['request_header'] = implode('\r\n', $splitHeaders);
+    }
+
+    /**
+     * Remove the host from a given URL.
+     *
+     * @param string $url
+     *
+     * @return string
+     */
+    private function deleteHostFromURL($url)
+    {
+        if (!Config::ignoreReqHostname()) {
+            return $url;
+        }
+
+        $urlParts = parse_url($url);
+        $urlParts['host'] = '[]';
+
+        return $this->rebuildUrl($urlParts);
+    }
+
+    /**
+     * Remove the specified query parameters from a URL.
+     *
+     * @param string $url
+     *
+     * @return string
+     */
+    private function delQueryFieldsFromURL($url, array $fields)
+    {
+        $urlParts = parse_url($url);
+
+        if (!isset($urlParts['query'])) {
+            return $url;
+        }
+
+        $queryParts = array();
+        parse_str($urlParts['query'], $queryParts);
+
+        foreach ($fields as $urlParameter) {
+            unset($queryParts[$urlParameter]);
+        }
+
+        $urlParts['query'] = http_build_query($queryParts);
+
+        return $this->rebuildUrl($urlParts);
     }
 
     /**
