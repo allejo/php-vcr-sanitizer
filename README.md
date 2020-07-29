@@ -78,7 +78,7 @@ This library allows your sanitize both the Request and Response sections of your
 
 - `request.ignoreHostname` - When set to true, the hostname in URLs inside of the Request will be replaced with `[]` in the `url` field and the `Host` in the headers will be set to null.
 - `request.ignoreQueryFields` - Define which GET parameters in your URL to completely strip out of your recordings.
-- `request.ignoreHeaders` - Define the headers in your recording that will automatically be set to null in your recordings. A wildcard may be used to strip all headers from the request.
+- `request.ignoreHeaders` - Define the headers in your recording that will automatically be set to null in your recordings. Using an asterisk (i.e. `*`) in the array can be used to strip all headers from the request.
 - `request.bodyScrubbers` - An array of callbacks that will have the request body available as a string. Each callback **must** return the modified body. The callbacks are called consecutively in the order they appear in this array and the value from one callback propagates to the next.
 - `request.postFieldScrubbers` - An array of callbacks that will have the request post fields available as an array. Each callback **must** return the modified post fields array. The callbacks are called consecutively in the order they appear in this array and the value from one callback propagates to the next.
 
@@ -86,7 +86,7 @@ This library allows your sanitize both the Request and Response sections of your
 
 The php-vcr library does not officially support modifying its responses so this library uses reflection to modify the contents of responses. While this feature is officially supported by *this* project, bear with us if this feature were to break due to the php-vcr changing its internals.
 
-- `response.ignoreHeaders` - The same as `request.ignoreHeaders` but for your response body instead. A wildcard may be used to strip all headers from the response.
+- `response.ignoreHeaders` - The same as `request.ignoreHeaders` but for your response body instead.
 - `response.bodyScrubbers` - The same as `request.bodyScrubbers` but for your response body instead.
 
 ### Disabling the Sanitizer
