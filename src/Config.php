@@ -16,12 +16,29 @@ abstract class Config
 {
     private static $options = array();
 
+    /** @var bool|null */
+    private static $ignoreAllReqHeaders;
+
+    /** @var bool|null */
+    private static $ignoreAllResHeaders;
+
     /**
      * @return void
      */
     public static function configureOptions(array $options)
     {
         self::$options = array_replace_recursive(self::defaultConfig(), $options);
+
+        self::$ignoreAllReqHeaders = in_array('*', self::getReqIgnoredHeaders(), true);
+        self::$ignoreAllResHeaders = in_array('*', self::getResIgnoredHeaders(), true);
+
+        if (self::$ignoreAllReqHeaders) {
+            self::$options['request']['ignoreHeaders'] = array('*');
+        }
+
+        if (self::$ignoreAllResHeaders) {
+            self::$options['response']['ignoreHeaders'] = array('*');
+        }
     }
 
     /**
@@ -30,6 +47,22 @@ abstract class Config
     public static function ignoreReqHostname()
     {
         return self::$options['request']['ignoreHostname'];
+    }
+
+    /**
+     * @return bool
+     */
+    public static function ignoreAllReqHeaders()
+    {
+        return self::$ignoreAllReqHeaders === true;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function ignoreAllResHeaders()
+    {
+        return self::$ignoreAllResHeaders === true;
     }
 
     /**
