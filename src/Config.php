@@ -90,7 +90,7 @@ abstract class Config
     }
 
     /**
-     * @return array<callable(string): string>
+     * @return array<callable(array<string, mixed>): string>
      */
     public static function getReqPostFieldScrubbers()
     {
