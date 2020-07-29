@@ -55,6 +55,7 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $workingRes = $originalRes->toArray();
         $this->sanitizeResponseHeaders($workingRes);
         $this->sanitizeResponseBody($workingRes);
+        $this->sanitizeResponseCurlInfo($workingRes);
 
         // There's no way to handle manipulating the Response object in php-vcr
         // so we'll have to get our hands dirty with reflection and hope this
@@ -68,6 +69,13 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $modResponse = Response::fromArray($workingRes);
         $headerProp->setValue($originalRes, $modResponse->getHeaders());
         $bodyProp->setValue($originalRes, $modResponse->getBody());
+
+        // curlInfo was introduced in php-vcr 1.5+
+        if ($ref->hasProperty('curlInfo')) {
+            $curlInfoProp = $ref->getProperty('curlInfo');
+            $curlInfoProp->setAccessible(true);
+            $curlInfoProp->setValue($originalRes, $modResponse->getCurlInfo());
+        }
     }
 
     private function sanitizeRequestHeaders(Request $request)
@@ -78,62 +86,38 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
             $caseInsensitiveKeys[strtolower($key)] = $key;
         }
 
-        foreach (Config::getReqIgnoredHeaders() as $header) {
-            if ($header === '*') {
-                foreach ($request->getHeaders() as $targetHeader => $value) {
-                    $request->setHeader($targetHeader, null);
+        if (Config::ignoreAllReqHeaders()) {
+            foreach ($request->getHeaders() as $targetHeader => $value) {
+                $request->setHeader($targetHeader, '');
+            }
+        } else {
+            foreach (Config::getReqIgnoredHeaders() as $header) {
+                $caseInsensitiveHeader = strtolower($header);
+
+                if (!isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {
+                    continue;
                 }
 
-                return;
-            }
+                $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
 
-            $caseInsensitiveHeader = strtolower($header);
-
-            if (!isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {
-                continue;
-            }
-
-            $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
-
-            if ($request->hasHeader($targetHeader)) {
-                $request->setHeader($targetHeader, null);
+                if ($request->hasHeader($targetHeader)) {
+                    $request->setHeader($targetHeader, '');
+                }
             }
         }
     }
 
     private function sanitizeRequestHost(Request $request)
     {
-        if (!Config::ignoreReqHostname()) {
-            return;
-        }
+        $newUrl = $this->deleteHostFromURL($request->getUrl());
 
-        $url = parse_url($request->getUrl());
-        $url['host'] = '[]';
-
-        $newUrl = $this->rebuildUrl($url);
         $request->setUrl($newUrl);
-        $request->setHeader('Host', null);
+        $request->setHeader('Host', '');
     }
 
     private function sanitizeRequestUrl(Request $request)
     {
-        $url = parse_url($request->getUrl());
-
-        if (!isset($url['query'])) {
-            return;
-        }
-
-        $queryParts = array();
-        parse_str($url['query'], $queryParts);
-
-        foreach (Config::getReqIgnoredQueryFields() as $urlParameter) {
-            unset($queryParts[$urlParameter]);
-        }
-
-        $url['query'] = http_build_query($queryParts);
-
-        $newUrl = $this->rebuildUrl($url);
-
+        $newUrl = $this->delQueryFieldsFromURL($request->getUrl(), Config::getReqIgnoredQueryFields());
         $request->setUrl($newUrl);
     }
 
@@ -173,23 +157,21 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
             $caseInsensitiveKeys[strtolower($key)] = $key;
         }
 
-        foreach (Config::getResIgnoredHeaders() as $headerToIgnore) {
-            if ($headerToIgnore === '*') {
-                $workspace['headers'] = null;
+        if (Config::ignoreAllResHeaders()) {
+            $workspace['headers'] = null;
+        } else {
+            foreach (Config::getResIgnoredHeaders() as $headerToIgnore) {
+                $caseInsensitiveHeader = strtolower($headerToIgnore);
 
-                return;
-            }
+                if (!isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {
+                    continue;
+                }
 
-            $caseInsensitiveHeader = strtolower($headerToIgnore);
+                $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
 
-            if (!isset($caseInsensitiveKeys[$caseInsensitiveHeader])) {
-                continue;
-            }
-
-            $targetHeader = $caseInsensitiveKeys[$caseInsensitiveHeader];
-
-            if (isset($workspace['headers'][$targetHeader])) {
-                $workspace['headers'][$targetHeader] = null;
+                if (isset($workspace['headers'][$targetHeader])) {
+                    $workspace['headers'][$targetHeader] = null;
+                }
             }
         }
     }
@@ -202,6 +184,147 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
         foreach (Config::getResBodyScrubbers() as $bodyScrubber) {
             $workspace['body'] = $bodyScrubber($workspace['body']);
+        }
+    }
+
+    private function sanitizeResponseCurlInfo(array &$workspace)
+    {
+        if (!isset($workspace['curl_info'])) {
+            return;
+        }
+
+        $this->sanitizeCurlInfoURL($workspace);
+
+        // `curl_info` has a duplicate of Request headers too in the `request_header` field
+        $splitHeaders = preg_split('/(\r\n)|(\n)/', $workspace['curl_info']['request_header']);
+
+        $this->sanitizeCurlInfoRequestHeaderURL($splitHeaders);
+        $this->sanitizeCurlInfoRequestHeaders($splitHeaders);
+
+        $workspace['curl_info']['request_header'] = implode('\r\n', $splitHeaders);
+    }
+
+    /**
+     * Remove the host from a given URL.
+     *
+     * @param string $url
+     *
+     * @return string
+     */
+    private function deleteHostFromURL($url)
+    {
+        if (!Config::ignoreReqHostname()) {
+            return $url;
+        }
+
+        $urlParts = parse_url($url);
+        $urlParts['host'] = '[]';
+
+        return $this->rebuildUrl($urlParts);
+    }
+
+    /**
+     * Remove the specified query parameters from a URL.
+     *
+     * @param string $url
+     *
+     * @return string
+     */
+    private function delQueryFieldsFromURL($url, array $fields)
+    {
+        $urlParts = parse_url($url);
+
+        if (!isset($urlParts['query'])) {
+            return $url;
+        }
+
+        $queryParts = array();
+        parse_str($urlParts['query'], $queryParts);
+
+        foreach ($fields as $urlParameter) {
+            unset($queryParts[$urlParameter]);
+        }
+
+        $urlParts['query'] = http_build_query($queryParts);
+
+        return $this->rebuildUrl($urlParts);
+    }
+
+    private function sanitizeCurlInfoURL(array &$workspace)
+    {
+        $requestUrl = $workspace['curl_info']['url'];
+
+        // Delete the host from `url` in the duplicate `curl_info` field
+        $requestUrl = $this->deleteHostFromURL($requestUrl);
+
+        // Delete any query parameters
+        $workspace['curl_info']['url'] = $this->delQueryFieldsFromURL($requestUrl, Config::getReqIgnoredQueryFields());
+
+        // `curl_info` have the IP of the target host located in `primary_ip`; clear that out
+        if (Config::ignoreReqHostname()) {
+            $workspace['curl_info']['primary_ip'] = '';
+        }
+    }
+
+    /**
+     * Sanitize the target URL in the `request_header` field inside of `curl_info`.
+     *
+     * @param string[] $headersByLine
+     *
+     * @return void
+     */
+    private function sanitizeCurlInfoRequestHeaderURL(array &$headersByLine)
+    {
+        $regexMatches = array();
+
+        // This RegEx matches: `GET /path?queryParam1=foobar&apiKey=hunter2 HTTP/1.1`
+        preg_match('/[A-Z]+ (.+) HTTP/', $headersByLine[0], $regexMatches);
+
+        // Remove any sensitive query parameters that are in this URL
+        if (isset($regexMatches[1])) {
+            $headersByLine[0] = str_replace(
+                $regexMatches[1],
+                $this->delQueryFieldsFromURL($regexMatches[1], Config::getReqIgnoredQueryFields()),
+                $headersByLine[0]
+            );
+        }
+    }
+
+    /**
+     * Sanitize the headers in the `request_header` field inside of `curl_info`.
+     *
+     * @param string[] $headersByLine
+     *
+     * @return void
+     */
+    private function sanitizeCurlInfoRequestHeaders(array &$headersByLine)
+    {
+        foreach ($headersByLine as &$line) {
+            $regexMatches = array();
+
+            // This RegEx matches: `Some-Header: Hunter2`. If it's not in this pattern, it's not a header so we can
+            // ignore it.
+            if (preg_match('/^([\w\-]+): ?(.+)/', $line, $regexMatches) !== 1) {
+                continue;
+            }
+
+            // We somehow didn't extract the expected amount
+            if (count($regexMatches) !== 3) {
+                continue;
+            }
+
+            list($_, $headerKey, $headerValue) = $regexMatches;
+
+            if ($headerKey === 'Host') {
+                // Remove the `//` that's automatically prepended to the host after it's rebuilt
+                $line = sprintf('%s: %s', $headerKey, str_replace('//', '', $this->deleteHostFromURL($headerValue)));
+            }
+
+            // If we are configured to ignore all headers or the header we've found, we need to ignore
+            if (Config::ignoreAllReqHeaders() || in_array($headerKey, Config::getReqIgnoredHeaders(), true)) {
+                $line = sprintf('%s: ""', $headerKey);
+                continue;
+            }
         }
     }
 

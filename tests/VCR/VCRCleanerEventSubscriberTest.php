@@ -21,6 +21,9 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
     /** @var MockWebServer */
     private $server;
 
+    /** @var Curl */
+    private $curl;
+
     public static function setUpBeforeClass()
     {
         $root = vfsStream::setup('root');
@@ -69,6 +72,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             )
         );
         $this->server->start();
+
+        $this->curl = new Curl($this->server->getServerRoot());
     }
 
     public function tearDown()
@@ -86,7 +91,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
     private function getApiUrl()
     {
-        return $this->server->getServerRoot() . '/search';
+        return '/search';
     }
 
     public function testCurlCallWithSensitiveUrlParameter()
@@ -99,12 +104,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->get($this->getApiUrl(), array(
+        $this->curl->get($this->getApiUrl(), array(
             'apiKey' => 'somethingSensitive',
             'q'      => 'keyword',
         ));
-        $curl->close();
 
         $vcrFile = $this->getCassetteContent();
 
@@ -120,11 +123,9 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->setHeader('X-Api-Key', 'SuperToast');
-        $curl->setHeader('X-Type', 'application/vcr');
-        $curl->get($this->getApiUrl());
-        $curl->close();
+        $this->curl->setHeader('X-Api-Key', 'SuperToast');
+        $this->curl->setHeader('X-Type', 'application/vcr');
+        $this->curl->get($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 
@@ -142,11 +143,9 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->setHeader('X-Api-Key', 'SuperToast');
-        $curl->setHeader('X-Type', 'application/vcr');
-        $curl->get($this->getApiUrl());
-        $curl->close();
+        $this->curl->setHeader('X-Api-Key', 'SuperToast');
+        $this->curl->setHeader('X-Type', 'application/vcr');
+        $this->curl->get($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 
@@ -167,10 +166,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->setHeader('X-Type', 'application/vcr');
-        $curl->get($this->getApiUrl());
-        $curl->close();
+        $this->curl->setHeader('X-Type', 'application/vcr');
+        $this->curl->get($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 
@@ -187,14 +184,12 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->setHeader('X-Api-Key', 'SuperToast');
-        $curl->setHeader('X-Type', 'application/vcr');
-        $curl->get($this->getApiUrl(), array(
+        $this->curl->setHeader('X-Api-Key', 'SuperToast');
+        $this->curl->setHeader('X-Type', 'application/vcr');
+        $this->curl->get($this->getApiUrl(), array(
             'apiKey' => 'somethingSensitive',
             'q'      => 'keyword',
         ));
-        $curl->close();
 
         $vcrFile = $this->getCassetteContent();
 
@@ -221,9 +216,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->post($this->getApiUrl(), 'SomethingPublic SomethingVerySecret');
-        $curl->close();
+        $this->curl->post($this->getApiUrl(), 'SomethingPublic SomethingVerySecret');
 
         $vcrFile = $this->getCassetteContent();
 
@@ -247,15 +240,13 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
         $secret = 'Do not tell anyone this secret';
         $postFields = array(
             'SomethingPublic' => 'Not a secret',
             'VerySecret'      => $secret,
         );
-        $curl->setOpt(CURLOPT_POSTFIELDS, $postFields);
-        $curl->post($this->getApiUrl());
-        $curl->close();
+        $this->curl->setOpt(CURLOPT_POSTFIELDS, $postFields);
+        $this->curl->post($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 
@@ -276,13 +267,11 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->get($this->getApiUrl());
-        $curl->close();
+        $this->curl->get($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains($this->server->getHost(), $vcrFile);
+        $this->assertNotRegExp(sprintf("/^\s+(?<!local_ip:)\s*%s/", preg_quote($this->server->getHost(), '/')), $vcrFile);
         $this->assertContains(sprintf('http://[]:%d/search', $this->server->getPort()), $vcrFile);
     }
 
@@ -296,9 +285,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->get($this->getApiUrl());
-        $curl->close();
+        $this->curl->get($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 
@@ -316,9 +303,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->get($this->getApiUrl());
-        $curl->close();
+        $this->curl->get($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 
@@ -340,9 +325,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
             ),
         ));
 
-        $curl = new Curl();
-        $curl->get($this->getApiUrl());
-        $curl->close();
+        $this->curl->get($this->getApiUrl());
 
         $vcrFile = $this->getCassetteContent();
 

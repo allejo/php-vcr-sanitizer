@@ -1,28 +1,29 @@
 # php-vcr-sanitizer
 
 [![Packagist](https://img.shields.io/packagist/v/allejo/php-vcr-sanitizer.svg)](https://packagist.org/packages/allejo/php-vcr-sanitizer)
-[![Build Status](https://travis-ci.org/allejo/php-vcr-sanitizer.svg?branch=master)](https://travis-ci.org/allejo/php-vcr-sanitizer)
+[![php-vcr v1.4+ or v1.5+](https://img.shields.io/badge/php--vcr-1.4%20%7C%201.5-blue)](https://github.com/php-vcr/php-vcr)
+![Unit Tests](https://github.com/allejo/php-vcr-sanitizer/workflows/Unit%20Tests/badge.svg)
 [![GitHub license](https://img.shields.io/github/license/allejo/php-vcr-sanitizer.svg)](https://github.com/allejo/php-vcr-sanitizer/blob/master/LICENSE.md)
-
 
 [php-vcr](https://php-vcr.github.io/) is a tool for recording and replaying outgoing requests, however it has had ["Privacy aware" marked as "soon"](https://php-vcr.github.io/#page-nav-Features) for quite some time now. Whenever I test my APIs, there will often be some sensitive information such as keys or passwords in the recordings. Up until now, I've had a separate script to always remove sensitive data before getting checked into version control.
 
 I got tired of having to always sanitize the data, so this is a quick and dirty solution until php-vcr officially supports "private" recordings.
 
-[TOC levels=4]: # "## Table of Contents"
+[TOC levels=2-4]: # "## Table of Contents"
 
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
-    - [Configuration](#configuration)
-        - [Sanitizing Requests](#sanitizing-requests)
-        - [Sanitizing Responses](#sanitizing-responses)
-    - [Disabling the Sanitizer](#disabling-the-sanitizer)
+  - [Configuration](#configuration)
+    - [Sanitizing Requests](#sanitizing-requests)
+    - [Sanitizing Responses](#sanitizing-responses)
+  - [Disabling the Sanitizer](#disabling-the-sanitizer)
 - [How Sanitizing Works](#how-sanitizing-works)
-    - [Hostnames](#hostnames)
-    - [Headers](#headers)
-    - [URL Parameters](#url-parameters)
-    - [Body Content](#body-content)
+  - [Hostnames](#hostnames)
+  - [Headers](#headers)
+  - [URL Parameters](#url-parameters)
+  - [Body Content](#body-content)
+  - [Post Field Content](#post-field-content)
 - [License](#license)
 
 
@@ -78,7 +79,7 @@ This library allows your sanitize both the Request and Response sections of your
 
 - `request.ignoreHostname` - When set to true, the hostname in URLs inside of the Request will be replaced with `[]` in the `url` field and the `Host` in the headers will be set to null.
 - `request.ignoreQueryFields` - Define which GET parameters in your URL to completely strip out of your recordings.
-- `request.ignoreHeaders` - Define the headers in your recording that will automatically be set to null in your recordings. A wildcard may be used to strip all headers from the request.
+- `request.ignoreHeaders` - Define the headers in your recording that will automatically be set to null in your recordings. Using an asterisk (i.e. `*`) in the array can be used to strip all headers from the request.
 - `request.bodyScrubbers` - An array of callbacks that will have the request body available as a string. Each callback **must** return the modified body. The callbacks are called consecutively in the order they appear in this array and the value from one callback propagates to the next.
 - `request.postFieldScrubbers` - An array of callbacks that will have the request post fields available as an array. Each callback **must** return the modified post fields array. The callbacks are called consecutively in the order they appear in this array and the value from one callback propagates to the next.
 
@@ -86,7 +87,7 @@ This library allows your sanitize both the Request and Response sections of your
 
 The php-vcr library does not officially support modifying its responses so this library uses reflection to modify the contents of responses. While this feature is officially supported by *this* project, bear with us if this feature were to break due to the php-vcr changing its internals.
 
-- `response.ignoreHeaders` - The same as `request.ignoreHeaders` but for your response body instead. A wildcard may be used to strip all headers from the response.
+- `response.ignoreHeaders` - The same as `request.ignoreHeaders` but for your response body instead.
 - `response.bodyScrubbers` - The same as `request.bodyScrubbers` but for your response body instead.
 
 ### Disabling the Sanitizer
