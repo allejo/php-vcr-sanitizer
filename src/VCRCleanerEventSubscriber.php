@@ -193,53 +193,13 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // `curl_info` has a duplicate of the target URL, let's clear that out as well
-        $requestUrl = $workspace['curl_info']['url'];
-        $requestUrl = $this->deleteHostFromURL($requestUrl);
-        $workspace['curl_info']['url'] = $this->delQueryFieldsFromURL($requestUrl, Config::getReqIgnoredQueryFields());
+        $this->sanitizeCurlInfoURL($workspace);
 
-        if (Config::ignoreReqHostname()) {
-            $workspace['curl_info']['primary_ip'] = '';
-        }
-
-        // `curl_info` has a duplicate of Request headers too
+        // `curl_info` has a duplicate of Request headers too in the `request_header` field
         $splitHeaders = preg_split('/(\r\n)|(\n)/', $workspace['curl_info']['request_header']);
 
-        // Remove sensitive query parameters from the duplicated URL
-        $matches = array();
-        preg_match('/[A-Z]+ (.+) HTTP/', $splitHeaders[0], $matches);
-        if (isset($matches[1])) {
-            $splitHeaders[0] = str_replace(
-                $matches[1],
-                $this->delQueryFieldsFromURL($matches[1], Config::getReqIgnoredQueryFields()),
-                $splitHeaders[0]
-            );
-        }
-
-        $headerWildcard = in_array('*', Config::getReqIgnoredHeaders(), true);
-
-        foreach ($splitHeaders as &$line) {
-            $matches = array();
-
-            if (preg_match('/^([\w\-]+): (.+)/', $line, $matches) !== 1) {
-                continue;
-            }
-
-            if (count($matches) !== 3) {
-                continue;
-            }
-
-            if ($headerWildcard || in_array($matches[1], Config::getReqIgnoredHeaders(), true)) {
-                $line = sprintf('%s: ""', $matches[1]);
-                continue;
-            }
-
-            if ($matches[1] === 'Host') {
-                $line = sprintf('%s: %s', $matches[1], str_replace('//', '', $this->deleteHostFromURL($matches[2])));
-            }
-        }
-
-        unset($line);
+        $this->sanitizeCurlInfoRequestHeaderURL($splitHeaders);
+        $this->sanitizeCurlInfoRequestHeaders($splitHeaders);
 
         $workspace['curl_info']['request_header'] = implode('\r\n', $splitHeaders);
     }
@@ -288,6 +248,84 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
         $urlParts['query'] = http_build_query($queryParts);
 
         return $this->rebuildUrl($urlParts);
+    }
+
+    private function sanitizeCurlInfoURL(array &$workspace)
+    {
+        $requestUrl = $workspace['curl_info']['url'];
+
+        // Delete the host from `url` in the duplicate `curl_info` field
+        $requestUrl = $this->deleteHostFromURL($requestUrl);
+
+        // Delete any query parameters
+        $workspace['curl_info']['url'] = $this->delQueryFieldsFromURL($requestUrl, Config::getReqIgnoredQueryFields());
+
+        // `curl_info` have the IP of the target host located in `primary_ip`; clear that out
+        if (Config::ignoreReqHostname()) {
+            $workspace['curl_info']['primary_ip'] = '';
+        }
+    }
+
+    /**
+     * Sanitize the target URL in the `request_header` field inside of `curl_info`.
+     *
+     * @param string[] $headersByLine
+     *
+     * @return void
+     */
+    private function sanitizeCurlInfoRequestHeaderURL(array &$headersByLine)
+    {
+        $regexMatches = array();
+
+        // This RegEx matches: `GET /path?queryParam1=foobar&apiKey=hunter2 HTTP/1.1`
+        preg_match('/[A-Z]+ (.+) HTTP/', $headersByLine[0], $regexMatches);
+
+        // Remove any sensitive query parameters that are in this URL
+        if (isset($regexMatches[1])) {
+            $headersByLine[0] = str_replace(
+                $regexMatches[1],
+                $this->delQueryFieldsFromURL($regexMatches[1], Config::getReqIgnoredQueryFields()),
+                $headersByLine[0]
+            );
+        }
+    }
+
+    /**
+     * Sanitize the headers in the `request_header` field inside of `curl_info`.
+     *
+     * @param string[] $headersByLine
+     *
+     * @return void
+     */
+    private function sanitizeCurlInfoRequestHeaders(array &$headersByLine)
+    {
+        foreach ($headersByLine as &$line) {
+            $regexMatches = array();
+
+            // This RegEx matches: `Some-Header: Hunter2`. If it's not in this pattern, it's not a header so we can
+            // ignore it.
+            if (preg_match('/^([\w\-]+): ?(.+)/', $line, $regexMatches) !== 1) {
+                continue;
+            }
+
+            // We somehow didn't extract the expected amount
+            if (count($regexMatches) !== 3) {
+                continue;
+            }
+
+            list($_, $headerKey, $headerValue) = $regexMatches;
+
+            if ($headerKey === 'Host') {
+                // Remove the `//` that's automatically prepended to the host after it's rebuilt
+                $line = sprintf('%s: %s', $headerKey, str_replace('//', '', $this->deleteHostFromURL($headerValue)));
+            }
+
+            // If we are configured to ignore all headers or the header we've found, we need to ignore
+            if (Config::ignoreAllReqHeaders() || in_array($headerKey, Config::getReqIgnoredHeaders(), true)) {
+                $line = sprintf('%s: ""', $headerKey);
+                continue;
+            }
+        }
     }
 
     /**
