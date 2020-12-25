@@ -195,13 +195,16 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
 
         $this->sanitizeCurlInfoURL($workspace);
 
-        // `curl_info` has a duplicate of Request headers too in the `request_header` field
-        $splitHeaders = preg_split('/(\r\n)|(\n)/', $workspace['curl_info']['request_header']);
+        // Check if this field is set, because it may not be
+        if (array_key_exists('request_header', $workspace['curl_info'])) {
+            // `curl_info` has a duplicate of Request headers too in the `request_header` field
+            $splitHeaders = preg_split('/(\r\n)|(\n)/', $workspace['curl_info']['request_header']);
 
-        $this->sanitizeCurlInfoRequestHeaderURL($splitHeaders);
-        $this->sanitizeCurlInfoRequestHeaders($splitHeaders);
+            $this->sanitizeCurlInfoRequestHeaderURL($splitHeaders);
+            $this->sanitizeCurlInfoRequestHeaders($splitHeaders);
 
-        $workspace['curl_info']['request_header'] = implode('\r\n', $splitHeaders);
+            $workspace['curl_info']['request_header'] = implode('\r\n', $splitHeaders);
+        }
     }
 
     /**
