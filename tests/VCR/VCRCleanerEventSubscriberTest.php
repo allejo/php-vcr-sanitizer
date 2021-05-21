@@ -273,6 +273,22 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNotRegExp(sprintf("/^\s+(?<!local_ip:)\s*%s/", preg_quote($this->server->getHost(), '/')), $vcrFile);
         $this->assertContains(sprintf('http://[]:%d/search', $this->server->getPort()), $vcrFile);
+        $this->assertContains("Host: ''", $vcrFile);
+    }
+
+    public function testCurlCallWithoutRedactedHostname()
+    {
+        VCRCleaner::enable(array(
+            'request' => array(
+                'ignoreHostname' => false,
+            ),
+        ));
+
+        $this->curl->get($this->getApiUrl());
+
+        $vcrFile = $this->getCassetteContent();
+
+        $this->assertNotContains("Host: ''", $vcrFile);
     }
 
     public function testCurlCallToModifyResponseHeaders()
