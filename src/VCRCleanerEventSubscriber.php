@@ -110,9 +110,11 @@ class VCRCleanerEventSubscriber implements EventSubscriberInterface
     private function sanitizeRequestHost(Request $request)
     {
         $newUrl = $this->deleteHostFromURL($request->getUrl());
-
         $request->setUrl($newUrl);
-        $request->setHeader('Host', '');
+
+        if (Config::ignoreReqHostname()) {
+            $request->setHeader('Host', '');
+        }
     }
 
     private function sanitizeRequestUrl(Request $request)
