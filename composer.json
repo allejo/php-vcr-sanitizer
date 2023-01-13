@@ -3,16 +3,16 @@
     "description": "Bring privacy to php-vcr by excluding API keys, passwords, and credentials from your recordings",
     "type": "library",
     "require": {
-        "php": ">=5.4",
-        "php-vcr/php-vcr": "^1.4",
-        "symfony/event-dispatcher": "^2.4|^3.0|^4.0|^5.0"
+        "php": ">=8.0",
+        "covergenius/php-vcr": "^1.9",
+        "symfony/event-dispatcher": "^6.0"
     },
     "require-dev": {
         "ext-curl": "*",
         "donatj/mock-webserver": "^2.1",
         "mikey179/vfsstream": "^1.6",
-        "php-curl-class/php-curl-class": "^8.0",
-        "phpunit/phpunit": "^4.8|^5.0|^7.0"
+        "php-curl-class/php-curl-class": "^9.0",
+        "phpunit/phpunit": "^9.3.3"
     },
     "autoload": {
         "psr-4": {

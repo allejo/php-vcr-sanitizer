@@ -24,7 +24,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
     /** @var Curl */
     private $curl;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         $root = vfsStream::setup('root');
 
@@ -45,13 +45,13 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         VCR::insertCassette('cassette.yml');
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         VCR::eject();
         VCR::turnOff();
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         // Clear the file
         file_put_contents(vfsStream::url('root/fixtures/cassette.yml'), '');
@@ -78,7 +78,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->curl = new Curl($this->server->getServerRoot());
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         // Remove any settings from tests
         VCRCleaner::enable(array());

@@ -14,7 +14,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-versions: ['5.4', '5.5', '5.6', '7.0', '7.1', '7.2', '7.3', '7.4']
+                php-versions: ['8.0', '8.1', '8.2']
                 os: [ubuntu-latest]
                 dependencies: ['install']
 
@@ -59,7 +59,7 @@ jobs:
               run: composer test
 
             - name: Push to Scrutinizer
-              if: matrix.php-versions == '7.4' && runner.os == 'Linux' && matrix.dependencies == 'install'
+              if: matrix.php-versions == '8.2' && runner.os == 'Linux' && matrix.dependencies == 'install'
               run: |
                   composer coverage
                   wget https://scrutinizer-ci.com/ocular.phar
