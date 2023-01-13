@@ -195,13 +195,13 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('SuperToast', $vcrFile);
-        $this->assertNotContains('somethingSensitive', $vcrFile);
-        $this->assertNotContains('apiKey', $vcrFile);
-        $this->assertContains('q=keyword', $vcrFile);
-        $this->assertContains('X-Api-Key', $vcrFile);
-        $this->assertContains('X-Type', $vcrFile);
-        $this->assertContains('application/vcr', $vcrFile);
+        $this->assertStringNotContainsString('SuperToast', $vcrFile);
+        $this->assertStringNotContainsString('somethingSensitive', $vcrFile);
+        $this->assertStringNotContainsString('apiKey', $vcrFile);
+        $this->assertStringContainsString('q=keyword', $vcrFile);
+        $this->assertStringContainsString('X-Api-Key', $vcrFile);
+        $this->assertStringContainsString('X-Type', $vcrFile);
+        $this->assertStringContainsString('application/vcr', $vcrFile);
     }
 
     public function testCurlCallWithSensitiveBody()
