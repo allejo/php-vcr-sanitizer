@@ -60,6 +60,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($newFile);
 
         $this->server = new MockWebServer();
+        $this->server->start();
+
         $this->server->setResponseOfPath(
             '/search',
             new Response(
