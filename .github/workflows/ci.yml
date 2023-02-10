@@ -9,14 +9,13 @@ on:
 
 jobs:
     tests:
-        name: PHP ${{ matrix.php-versions }} on ${{ matrix.os }} w/ ${{ matrix.dependencies }}
+        name: PHP ${{ matrix.php-versions }} on ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
-                php-versions: ['5.4', '5.5', '5.6', '7.0', '7.1', '7.2', '7.3', '7.4']
+                php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
                 os: [ubuntu-latest]
-                dependencies: ['install']
 
         steps:
             - name: Checkout
@@ -26,7 +25,7 @@ jobs:
               uses: shivammathur/setup-php@v2
               with:
                   php-version: ${{ matrix.php-versions }}
-                  extensions: curl, soap
+                  extensions: curl, json, soap, sockets
                   coverage: xdebug
 
             - name: Setup Problem Matchers for PHP
@@ -49,8 +48,16 @@ jobs:
                   key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
                   restore-keys: ${{ runner.os }}-composer-
 
-            - name: Install dependencies
-              run: composer ${{ matrix.dependencies }} --prefer-dist --no-progress --no-suggest
+            - name: Install dependencies for PHP
+              run: |
+                  composer install --prefer-dist --no-progress
+
+            - name: Patch unit tests to work against PHPUnit 7.5, if needed
+              if: matrix.php-versions == '7.1' || matrix.php-versions == '7.2'
+              run: |
+                sed -i -E 's/assertDoesNotMatchRegularExpression/assertNotRegExp/gm' tests/VCR/VCRCleanerEventSubscriberTest.php
+                sed -i -E 's/assertStringNotContainsString/assertNotContains/gm' tests/VCR/VCRCleanerEventSubscriberTest.php
+                sed -i -E 's/assertStringContainsString/assertContains/gm' tests/VCR/VCRCleanerEventSubscriberTest.php
 
             - name: Show Installed Dependencies
               run: composer show

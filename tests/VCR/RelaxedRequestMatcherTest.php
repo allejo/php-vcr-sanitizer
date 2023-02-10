@@ -11,10 +11,11 @@ namespace allejo\VCR\Tests;
 
 use allejo\VCR\Config;
 use allejo\VCR\RelaxedRequestMatcher;
+use PHPUnit\Framework\TestCase;
 use VCR\Request;
 use VCR\RequestMatcher;
 
-class RelaxedRequestMatcherTest extends \PHPUnit_Framework_TestCase
+class RelaxedRequestMatcherTest extends TestCase
 {
     public function testRelaxedRequestMatcherQueryHostEnabled()
     {

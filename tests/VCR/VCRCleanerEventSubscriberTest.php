@@ -14,18 +14,41 @@ use Curl\Curl;
 use donatj\MockWebServer\MockWebServer;
 use donatj\MockWebServer\Response;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\TestCase;
 use VCR\VCR;
 
-class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
+class VCRCleanerEventSubscriberTest extends TestCase
 {
     /** @var MockWebServer */
-    private $server;
+    private static $server;
 
     /** @var Curl */
     private $curl;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
+        // It's important to configure and start the mock web server first before anything else. I have no idea why,
+        // but in PHP 8.0+ I get the following error if I don't:
+        //
+        // > PHP Warning:  proc_open(): Unable to copy file descriptor 12 (for pipe) into file descriptor 1: Bad file descriptor
+        //
+        // This warning is the root cause of getting another exception:
+        //
+        // > donatj\MockWebServer\Exceptions\ServerException: Failed to start server. Is something already running on port 56067?
+        self::$server = new MockWebServer();
+        self::$server->start();
+        self::$server->setResponseOfPath(
+            '/search',
+            new Response(
+                '{"status": 200}',
+                array(
+                    'Content-Type' => 'application/json',
+                    'X-Cache'      => 'true',
+                ),
+                200
+            )
+        );
+
         $root = vfsStream::setup('root');
 
         vfsStream::create(array(
@@ -45,13 +68,15 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         VCR::insertCassette('cassette.yml');
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         VCR::eject();
         VCR::turnOff();
+
+        self::$server->stop();
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         // Clear the file
         file_put_contents(vfsStream::url('root/fixtures/cassette.yml'), '');
@@ -59,29 +84,13 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
         $newFile = $this->getCassetteContent();
         $this->assertEmpty($newFile);
 
-        $this->server = new MockWebServer();
-        $this->server->setResponseOfPath(
-            '/search',
-            new Response(
-                '{"status": 200}',
-                array(
-                    'Content-Type' => 'application/json',
-                    'X-Cache'      => 'true',
-                ),
-                200
-            )
-        );
-        $this->server->start();
-
-        $this->curl = new Curl($this->server->getServerRoot());
+        $this->curl = new Curl(self::$server->getServerRoot());
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         // Remove any settings from tests
         VCRCleaner::enable(array());
-
-        $this->server->stop();
     }
 
     private function getCassetteContent()
@@ -111,8 +120,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('somethingSensitive', $vcrFile);
-        $this->assertContains($this->getApiUrl(), $vcrFile);
+        $this->assertStringNotContainsString('somethingSensitive', $vcrFile);
+        $this->assertStringContainsString($this->getApiUrl(), $vcrFile);
     }
 
     public function testCurlCallWithSensitiveHeaders()
@@ -129,10 +138,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('SuperToast', $vcrFile);
-        $this->assertContains('X-Api-Key', $vcrFile);
-        $this->assertContains('X-Type', $vcrFile);
-        $this->assertContains('application/vcr', $vcrFile);
+        $this->assertStringNotContainsString('SuperToast', $vcrFile);
+        $this->assertStringContainsString('X-Api-Key', $vcrFile);
+        $this->assertStringContainsString('X-Type', $vcrFile);
+        $this->assertStringContainsString('application/vcr', $vcrFile);
     }
 
     public function testCurlCallWithWildcardSensitiveHeaders()
@@ -149,10 +158,10 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertContains('X-Api-Key', $vcrFile);
-        $this->assertNotContains('SuperToast', $vcrFile);
-        $this->assertContains('X-Type', $vcrFile);
-        $this->assertNotContains('application/vcr', $vcrFile);
+        $this->assertStringContainsString('X-Api-Key', $vcrFile);
+        $this->assertStringNotContainsString('SuperToast', $vcrFile);
+        $this->assertStringContainsString('X-Type', $vcrFile);
+        $this->assertStringNotContainsString('application/vcr', $vcrFile);
     }
 
     public function testCurlCallWithSensitiveHeadersThatDontExist()
@@ -171,8 +180,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertContains('X-Type', $vcrFile);
-        $this->assertContains('application/vcr', $vcrFile);
+        $this->assertStringContainsString('X-Type', $vcrFile);
+        $this->assertStringContainsString('application/vcr', $vcrFile);
     }
 
     public function testCurlCallWithSensitiveUrlParametersAndHeaders()
@@ -193,13 +202,13 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('SuperToast', $vcrFile);
-        $this->assertNotContains('somethingSensitive', $vcrFile);
-        $this->assertNotContains('apiKey', $vcrFile);
-        $this->assertContains('q=keyword', $vcrFile);
-        $this->assertContains('X-Api-Key', $vcrFile);
-        $this->assertContains('X-Type', $vcrFile);
-        $this->assertContains('application/vcr', $vcrFile);
+        $this->assertStringNotContainsString('SuperToast', $vcrFile);
+        $this->assertStringNotContainsString('somethingSensitive', $vcrFile);
+        $this->assertStringNotContainsString('apiKey', $vcrFile);
+        $this->assertStringContainsString('q=keyword', $vcrFile);
+        $this->assertStringContainsString('X-Api-Key', $vcrFile);
+        $this->assertStringContainsString('X-Type', $vcrFile);
+        $this->assertStringContainsString('application/vcr', $vcrFile);
     }
 
     public function testCurlCallWithSensitiveBody()
@@ -220,8 +229,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('VerySecret', $vcrFile);
-        $this->assertContains('REDACTED', $vcrFile);
+        $this->assertStringNotContainsString('VerySecret', $vcrFile);
+        $this->assertStringContainsString('REDACTED', $vcrFile);
     }
 
     public function testCurlCallWithSensitivePostField()
@@ -250,8 +259,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains($secret, $vcrFile);
-        $this->assertContains('REDACTED', $vcrFile);
+        $this->assertStringNotContainsString($secret, $vcrFile);
+        $this->assertStringContainsString('REDACTED', $vcrFile);
     }
 
     public function testCurlCallWithRedactedHostname()
@@ -271,9 +280,9 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotRegExp(sprintf("/^\s+(?<!local_ip:)\s*%s/", preg_quote($this->server->getHost(), '/')), $vcrFile);
-        $this->assertContains(sprintf('http://[]:%d/search', $this->server->getPort()), $vcrFile);
-        $this->assertContains("Host: ''", $vcrFile);
+        $this->assertDoesNotMatchRegularExpression(sprintf("/^\s+(?<!local_ip:)\s*%s/", preg_quote(self::$server->getHost(), '/')), $vcrFile);
+        $this->assertStringContainsString(sprintf('http://[]:%d/search', self::$server->getPort()), $vcrFile);
+        $this->assertStringContainsString("Host: ''", $vcrFile);
     }
 
     public function testCurlCallWithoutRedactedHostname()
@@ -288,7 +297,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains("Host: ''", $vcrFile);
+        $this->assertStringNotContainsString("Host: ''", $vcrFile);
     }
 
     public function testCurlCallToModifyResponseHeaders()
@@ -305,8 +314,8 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains("X-Cache: 'true'", $vcrFile, '', true);
-        $this->assertContains('X-Cache: null', $vcrFile, '', true);
+        $this->assertStringNotContainsString("X-Cache: 'true'", $vcrFile, '', true);
+        $this->assertStringContainsString('X-Cache: null', $vcrFile, '', true);
     }
 
     public function testCurlCallToModifyWildcardResponseHeaders()
@@ -323,7 +332,7 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('X-Cache', $vcrFile, '', true);
+        $this->assertStringNotContainsString('X-Cache', $vcrFile, '', true);
     }
 
     public function testCurlCallToModifyResponseBody()
@@ -345,6 +354,6 @@ class VCRCleanerEventSubscriberTest extends \PHPUnit_Framework_TestCase
 
         $vcrFile = $this->getCassetteContent();
 
-        $this->assertNotContains('{"status":', $vcrFile);
+        $this->assertStringNotContainsString('{"status":', $vcrFile);
     }
 }
