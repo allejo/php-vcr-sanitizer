@@ -9,10 +9,12 @@
     },
     "require-dev": {
         "ext-curl": "*",
+        "ext-json": "*",
+        "ext-sockets": "*",
         "donatj/mock-webserver": "^2.1",
         "mikey179/vfsstream": "^1.6",
-        "php-curl-class/php-curl-class": "^8.0",
-        "phpunit/phpunit": "^4.8|^5.0|^7.0"
+        "php-curl-class/php-curl-class": "^9.0",
+        "phpunit/phpunit": "^7.5|^9.5"
     },
     "autoload": {
         "psr-4": {
