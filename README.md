@@ -52,7 +52,7 @@ VCRCleaner::enable(array(
        ),
        'bodyScrubbers' => array(
            function($body) {
-               return preg_replace('/<password.*<\/password>/', 'hunter2', $body);
+               return preg_replace('/<password.*?<\/password>/', 'hunter2', $body);
            }
        ),
        'postFieldScrubbers' => array(
